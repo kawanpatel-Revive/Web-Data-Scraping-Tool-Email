@@ -14,9 +14,8 @@ import re
 MAX_PAGES_PER_SITE = 50
 MAX_DEPTH = 3
 THREADS = 8
-REQUEST_DELAY = 0.3  # FIX #4: Reduced from 1s to avoid bulk slowdowns
+REQUEST_DELAY = 0.3
 
-# FIX #9: Full browser User-Agent to avoid being blocked
 HEADERS = {
     "User-Agent": (
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -25,22 +24,42 @@ HEADERS = {
     )
 }
 
+# Strong signals — if any of these appear, it's almost certainly a company
 COMPANY_SUFFIX = [
-    "ltd", "limited", "pvt", "private", "llp",
-    "industries", "corporation", "corp",
+    "ltd", "limited", "pvt", "private", "llp", "llc",
+    "industries", "corporation", "corp", "inc",
     "systems", "engineering", "solutions",
-    "technologies", "services", "group"
+    "technologies", "technology", "services", "group",
+    "manufacturing", "enterprises", "exports", "imports",
+    "international", "global", "co.", "& co", "company"
 ]
 
-BLACKLIST = [
-    "contact", "about", "career", "login", "privacy",
-    "policy", "copyright", "terms", "cookie",
-    "news", "blog", "event", "expo", "article"
+# If any of these appear anywhere in the text, skip it
+HARD_BLACKLIST = [
+    "contact us", "about us", "careers", "login", "sign in",
+    "privacy policy", "terms", "cookie", "copyright",
+    "all rights reserved", "follow us", "subscribe",
+    "read more", "learn more", "click here", "home",
+    "our products", "our services", "get a quote",
+    "request a", "download", "newsletter"
 ]
+
+# Navigation / UI words that are never company names
+SKIP_WORDS = {
+    "home", "about", "contact", "services", "products", "blog",
+    "news", "events", "gallery", "careers", "login", "logout",
+    "register", "search", "menu", "back", "next", "previous",
+    "submit", "send", "more", "less", "all", "view", "show",
+    "hide", "open", "close", "yes", "no", "ok", "cancel",
+    "terms", "privacy", "policy", "sitemap", "faq", "help",
+    "support", "english", "hindi", "language", "share",
+    "facebook", "twitter", "linkedin", "instagram", "youtube"
+}
 
 DIRECTORY_HINTS = [
     "member", "directory", "companies", "suppliers",
-    "manufacturers", "partners", "vendors", "industries"
+    "manufacturers", "partners", "vendors", "industries",
+    "exhibitors", "listings", "members"
 ]
 
 BAD_TERMS = [
@@ -54,21 +73,13 @@ BAD_TERMS = [
 # =========================
 
 def detect_url_column(df):
-
     url_pattern = re.compile(r"(https?://|www\.)", re.IGNORECASE)
-
     best_column = None
     best_score = 0
 
     for col in df.columns:
-
         values = df[col].dropna().astype(str)
-        score = 0
-
-        for v in values[:50]:
-            if url_pattern.search(v):
-                score += 1
-
+        score = sum(1 for v in values[:50] if url_pattern.search(v))
         if score > best_score:
             best_score = score
             best_column = col
@@ -81,28 +92,68 @@ def detect_url_column(df):
 
 
 # =========================
-# COMPANY DETECTION
+# COMPANY DETECTION (REWRITTEN)
 # =========================
 
 def is_company(text):
+    """
+    Multi-signal company name detector.
+    Returns True if the text looks like a company name.
+    """
+    t = text.strip()
+    t_lower = t.lower()
 
-    t = text.lower().strip()
+    # --- Hard filters (fast rejections) ---
 
-    if len(t.split()) > 7:
+    # Too short or too long
+    if len(t) < 4 or len(t) > 100:
         return False
 
-    # FIX #3: Removed blanket digit rejection.
-    # Only reject if the ENTIRE token is a number (e.g. "2024", "123")
-    # so names like "3M", "B2B Solutions Pvt Ltd" are accepted.
-    tokens = t.split()
-    if all(tok.isdigit() for tok in tokens):
+    # Too many words
+    words = t_lower.split()
+    if len(words) > 8:
         return False
 
-    if any(b in t for b in BLACKLIST):
+    # Single word that's a known nav/UI term
+    if len(words) == 1 and t_lower in SKIP_WORDS:
         return False
 
-    if any(s in t for s in COMPANY_SUFFIX):
+    # Contains a full blacklisted phrase
+    if any(b in t_lower for b in HARD_BLACKLIST):
+        return False
+
+    # Looks like a sentence (has common filler words)
+    if re.search(r'\b(is|are|was|were|the|and|for|with|our|your|we|you|it|this|that)\b', t_lower):
+        return False
+
+    # Contains URLs or emails
+    if re.search(r'(https?://|www\.|@)', t_lower):
+        return False
+
+    # Mostly numbers
+    digit_ratio = sum(c.isdigit() for c in t) / max(len(t), 1)
+    if digit_ratio > 0.5:
+        return False
+
+    # Contains special characters that don't belong in company names
+    if re.search(r'[<>{}\[\]|\\^`~]', t):
+        return False
+
+    # --- Positive signals ---
+
+    # Strong signal: has a known company suffix
+    if any(re.search(r'\b' + re.escape(s) + r'\b', t_lower) for s in COMPANY_SUFFIX):
         return True
+
+    # Medium signal: Title Case proper noun phrase (2–5 words)
+    # e.g. "Tata Steel", "Reliance Power", "Mahindra Electric"
+    if 2 <= len(words) <= 5:
+        original_words = t.split()
+        capitalized = sum(1 for w in original_words if w and w[0].isupper())
+        if capitalized >= len(original_words) - 1:
+            non_skip = [w for w in words if w not in SKIP_WORDS]
+            if len(non_skip) >= 2:
+                return True
 
     return False
 
@@ -112,31 +163,33 @@ def is_company(text):
 # =========================
 
 def scrape_page(url):
-
     companies = set()
     links = []
 
     try:
         r = requests.get(url, headers=HEADERS, timeout=15)
         r.raise_for_status()
-
         soup = BeautifulSoup(r.text, "html.parser")
 
-        # Extract companies
-        for tag in soup.find_all(["h1", "h2", "h3", "h4", "strong", "b", "span", "a"]):
-            text = tag.get_text().strip()
-            if 5 < len(text) < 120:
-                if is_company(text):
-                    companies.add(text.title())
+        # Remove noise tags before extracting text
+        for tag in soup(["script", "style", "nav", "footer", "header", "noscript"]):
+            tag.decompose()
+
+        # Extract companies from high-signal tags
+        for tag in soup.find_all(["h1", "h2", "h3", "h4", "strong", "b", "td", "li", "span", "a", "p"]):
+            text = tag.get_text(separator=" ").strip()
+            text = re.sub(r'\s+', ' ', text)
+            if is_company(text):
+                companies.add(text.title())
 
         # Extract links
         for a in soup.find_all("a", href=True):
             link = urljoin(url, a["href"])
-            # FIX #7: Normalize URLs — strip trailing slashes to avoid revisits
             link = link.rstrip("/")
+            if link.startswith(("mailto:", "tel:", "#")):
+                continue
             links.append(link)
 
-    # FIX #1: Log errors instead of silently swallowing them
     except requests.exceptions.Timeout:
         print(f"[TIMEOUT] {url}")
     except requests.exceptions.SSLError:
@@ -154,15 +207,8 @@ def scrape_page(url):
 # =========================
 
 def filter_internal_links(base_url, links):
-
     domain = urlparse(base_url).netloc
-    clean = []
-
-    for link in links:
-        if domain in urlparse(link).netloc:
-            clean.append(link)
-
-    return clean
+    return [link for link in links if domain in urlparse(link).netloc]
 
 
 # =========================
@@ -170,16 +216,13 @@ def filter_internal_links(base_url, links):
 # =========================
 
 def prioritize_links(links):
-
     directory = []
     others = []
-
     for link in links:
         if any(h in link.lower() for h in DIRECTORY_HINTS):
             directory.append(link)
         else:
             others.append(link)
-
     return directory + others
 
 
@@ -188,26 +231,17 @@ def prioritize_links(links):
 # =========================
 
 def crawl_site(base_url):
-
-    # FIX #7: Normalize base URL
     base_url = base_url.rstrip("/")
-
     visited = set()
-    # FIX #6: Use deque instead of list for O(1) popleft
     queue = deque([(base_url, 0)])
-
     companies = set()
 
     while queue and len(visited) < MAX_PAGES_PER_SITE:
-
         url, depth = queue.popleft()
-
-        # FIX #7: Normalize before visited check
         url = url.rstrip("/")
 
         if url in visited:
             continue
-
         visited.add(url)
 
         page_companies, links = scrape_page(url)
@@ -216,7 +250,6 @@ def crawl_site(base_url):
         if depth < MAX_DEPTH:
             links = filter_internal_links(base_url, links)
             links = prioritize_links(links)
-
             for link in links[:30]:
                 if link not in visited:
                     queue.append((link, depth + 1))
@@ -231,12 +264,10 @@ def crawl_site(base_url):
 # =========================
 
 def run_scraper(df):
-
     url_column = detect_url_column(df)
     urls = df[url_column].dropna().astype(str)
 
     cleaned_urls = []
-
     for url in urls:
         url = url.strip()
         if not url.startswith("http"):
@@ -250,18 +281,12 @@ def run_scraper(df):
     failed = []
 
     with ThreadPoolExecutor(max_workers=THREADS) as executor:
-
-        futures = {
-            executor.submit(crawl_site, url): url
-            for url in urls
-        }
-
+        futures = {executor.submit(crawl_site, url): url for url in urls}
         for future in as_completed(futures):
             url = futures[future]
             try:
                 result = future.result()
                 all_companies.update(result)
-            # FIX #2: Log failures instead of silently swallowing them
             except Exception as e:
                 print(f"[FAILED] {url}: {e}")
                 failed.append(url)
@@ -271,11 +296,7 @@ def run_scraper(df):
         for f in failed:
             print(f"  - {f}")
 
-    result_df = pd.DataFrame({
-        "Company Name": sorted(all_companies)
-    })
-
-    return result_df
+    return pd.DataFrame({"Company Name": sorted(all_companies)})
 
 
 # =========================
@@ -283,26 +304,20 @@ def run_scraper(df):
 # =========================
 
 def run_verifier(df):
-
-    # FIX #8: Validate that required column exists before processing
     if "Company Name" not in df.columns:
         raise ValueError(
             "The uploaded file must contain a 'Company Name' column. "
-            "Please upload the output file from the scraper, not a raw URL file."
+            "Please upload the scraper output file, not a raw URL file."
         )
 
     def check_company(name):
         n = str(name).lower()
-
         if any(b in n for b in BAD_TERMS):
             return "Likely Wrong"
-
         if len(n.split()) > 6:
             return "Suspicious"
-
         return "Likely Company"
 
     df = df.copy()
     df["Check"] = df["Company Name"].apply(check_company)
-
     return df
