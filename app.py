@@ -28,53 +28,70 @@ operation = st.selectbox(
 
 if st.button("Run"):
 
+    # FIX #11: Initialize result to None so it's always defined
+    result = None
+
     with st.spinner("Processing..."):
 
-        # BULK SCRAPER
-        if uploaded_file and operation == "Run Scraper":
+        try:
 
-            df = pd.read_excel(uploaded_file)
-            result = run_scraper(df)
+            # BULK SCRAPER
+            if uploaded_file and operation == "Run Scraper":
 
-        # SINGLE WEBSITE SCRAPER
-        elif single_url and operation == "Run Scraper":
+                df = pd.read_excel(uploaded_file)
+                result = run_scraper(df)
 
-            if not single_url.startswith("http"):
-                single_url = "https://" + single_url
+            # SINGLE WEBSITE SCRAPER
+            elif single_url and operation == "Run Scraper":
 
-            companies = crawl_site(single_url)
+                if not single_url.startswith("http"):
+                    single_url = "https://" + single_url
 
-            result = pd.DataFrame({
-                "Company Name": sorted(companies)
-            })
+                companies = crawl_site(single_url)
 
-        # VERIFIER
-        elif uploaded_file and operation == "Run Verifier":
+                result = pd.DataFrame({
+                    "Company Name": sorted(companies)
+                })
 
-            df = pd.read_excel(uploaded_file)
-            result = run_verifier(df)
+            # VERIFIER
+            elif uploaded_file and operation == "Run Verifier":
 
-        else:
+                df = pd.read_excel(uploaded_file)
+                # FIX #8: run_verifier now validates the column internally
+                # and raises a clear ValueError if it's missing
+                result = run_verifier(df)
 
-            st.error("Please upload a file or enter a website.")
+            else:
+                st.error("Please upload a file or enter a website URL.")
+                st.stop()
+
+        except ValueError as e:
+            st.error(f"Input Error: {e}")
             st.stop()
 
-    st.success("Completed")
+        except Exception as e:
+            st.error(f"Something went wrong: {e}")
+            st.stop()
 
-    st.write("Rows in result:", len(result))
+    if result is not None and not result.empty:
 
-    st.dataframe(result.head())
+        st.success("Completed")
+        st.write("Rows in result:", len(result))
+        st.dataframe(result.head())
 
-    buffer = io.BytesIO()
+        buffer = io.BytesIO()
 
-    with pd.ExcelWriter(buffer, engine="openpyxl") as writer:
-        result.to_excel(writer, index=False)
+        with pd.ExcelWriter(buffer, engine="openpyxl") as writer:
+            result.to_excel(writer, index=False)
 
-    buffer.seek(0)
+        buffer.seek(0)
 
-    st.download_button(
-        label="Download Excel",
-        data=buffer,
-        file_name="output.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
+        st.download_button(
+            label="Download Excel",
+            data=buffer,
+            file_name="output.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+
+    else:
+        st.warning("No companies were found. The site may be blocking scraping, or no company names matched the detection rules.")
