@@ -1,0 +1,1239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Company Contact Lookup — Free + Apollo + Claude AI</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:#ffffff; --bg2:#f7f6f4; --bg3:#f0efec;
+  --text:#181816; --text2:#5a5a52; --text3:#9a9a90;
+  --border:rgba(0,0,0,0.10); --border2:rgba(0,0,0,0.20); --border3:rgba(0,0,0,0.30);
+  --green-bg:#eaf3de; --green-tx:#3b6d11;
+  --red-bg:#fcebeb;   --red-tx:#a32d2d;
+  --amber-bg:#faeeda; --amber-tx:#854f0b;
+  --blue-bg:#e6f1fb;  --blue-tx:#185fa5;
+  --purple-bg:#f0eafa;--purple-tx:#6b21a8;
+  --gold-bg:#fdf7e3;  --gold-tx:#92670a;
+  --r-sm:6px; --r-md:8px; --r-lg:12px;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#1b1b19; --bg2:#252523; --bg3:#2e2e2b;
+    --text:#f0efe9; --text2:#a5a59a; --text3:#68685e;
+    --border:rgba(255,255,255,0.08); --border2:rgba(255,255,255,0.16); --border3:rgba(255,255,255,0.26);
+    --green-bg:#17340a; --green-tx:#b8d88a;
+    --red-bg:#4a1212;   --red-tx:#f0a0a0;
+    --amber-bg:#3e2206; --amber-tx:#f5c878;
+    --blue-bg:#04284e;  --blue-tx:#7db8e8;
+    --purple-bg:#2d1a4a;--purple-tx:#c084fc;
+    --gold-bg:#2e2206;  --gold-tx:#f5c878;
+  }
+}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg3);color:var(--text);min-height:100vh;padding:2rem 1rem;font-size:15px;line-height:1.6;}
+.wrap{max-width:1020px;margin:0 auto;}
+.hdr{margin-bottom:1.5rem;}
+.hdr-top{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1rem;}
+.logo{display:flex;align-items:center;gap:10px;}
+.logo-icon{width:42px;height:42px;border-radius:var(--r-md);background:var(--text);color:var(--bg);display:flex;align-items:center;justify-content:center;font-size:22px;}
+.logo-text h1{font-size:20px;font-weight:700;letter-spacing:-0.3px;}
+.logo-text p{font-size:12px;color:var(--text3);margin-top:1px;}
+.free-badge{font-size:11px;font-weight:700;background:var(--green-bg);color:var(--green-tx);padding:4px 10px;border-radius:99px;letter-spacing:0.5px;border:0.5px solid var(--green-tx);align-self:flex-start;margin-top:6px;}
+.sources{display:flex;flex-wrap:wrap;gap:6px;margin-top:1rem;}
+.src-pill{font-size:11px;padding:4px 10px;border-radius:99px;background:var(--bg);border:0.5px solid var(--border2);color:var(--text2);display:flex;align-items:center;gap:5px;}
+.src-dot{width:6px;height:6px;border-radius:50%;background:var(--green-tx);display:inline-block;}
+.stepbar{display:flex;align-items:center;gap:6px;background:var(--bg);border:0.5px solid var(--border);border-radius:var(--r-lg);padding:1rem 1.25rem;margin-bottom:1rem;flex-wrap:wrap;}
+.stp{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--text3);}
+.stp.on{color:var(--text);font-weight:600;}
+.stp.ok{color:var(--green-tx);}
+.stp-n{width:22px;height:22px;border-radius:50%;border:0.5px solid var(--border2);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.stp.on .stp-n{background:var(--text);color:var(--bg);border-color:var(--text);}
+.stp.ok .stp-n{background:var(--green-bg);color:var(--green-tx);border-color:var(--green-tx);}
+.stp-line{flex:1;min-width:16px;height:0.5px;background:var(--border);}
+.panel{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--r-lg);padding:1.5rem;margin-bottom:1rem;}
+.ptitle{font-size:14px;font-weight:600;margin-bottom:1rem;display:flex;align-items:center;gap:8px;}
+.ptitle .ico{font-size:18px;}
+.dropzone{border:1.5px dashed var(--border2);border-radius:var(--r-md);padding:2.5rem 1rem;text-align:center;cursor:pointer;background:var(--bg2);transition:background .15s,border-color .15s;}
+.dropzone:hover,.dropzone.over{background:var(--bg3);border-color:var(--border3);}
+.dropzone .dz-ico{font-size:36px;display:block;margin-bottom:8px;}
+.dropzone .dz-txt{font-size:14px;color:var(--text2);}
+.dropzone .dz-hint{font-size:12px;color:var(--text3);margin-top:4px;}
+#csvFile{display:none;}
+.fname{margin-top:10px;display:inline-block;font-size:13px;font-weight:600;background:var(--green-bg);color:var(--green-tx);padding:3px 12px;border-radius:99px;}
+.divrow{display:flex;align-items:center;gap:10px;margin:1.25rem 0;}
+.divrow hr{flex:1;border:none;border-top:0.5px solid var(--border);}
+.divrow span{font-size:12px;color:var(--text3);white-space:nowrap;}
+.man-row{display:flex;gap:8px;}
+.man-row input{flex:1;height:38px;padding:0 12px;font-size:14px;border:0.5px solid var(--border2);border-radius:var(--r-md);background:var(--bg);color:var(--text);}
+.man-row input:focus{outline:none;border-color:var(--border3);}
+.man-row input::placeholder{color:var(--text3);}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:1rem;min-height:30px;align-items:center;}
+.tag{display:flex;align-items:center;gap:5px;background:var(--bg2);border:0.5px solid var(--border);border-radius:99px;padding:4px 10px 4px 12px;font-size:13px;color:var(--text);}
+.tag-x{background:none;border:none;cursor:pointer;color:var(--text3);font-size:15px;line-height:1;padding:0;}
+.tag-x:hover{color:var(--red-tx);}
+.tags-empty{font-size:13px;color:var(--text3);}
+.btn{height:38px;padding:0 16px;font-size:13px;font-weight:500;border-radius:var(--r-md);border:0.5px solid var(--border2);background:var(--bg);color:var(--text);cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:background .12s,transform .08s;white-space:nowrap;}
+.btn:hover{background:var(--bg2);}
+.btn:active{transform:scale(0.97);}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none;}
+.btn-solid{background:var(--text);color:var(--bg);border-color:var(--text);}
+.btn-solid:hover{opacity:.85;background:var(--text);}
+.btn-sm{height:30px;padding:0 10px;font-size:12px;}
+.act{display:flex;align-items:center;gap:8px;margin-top:1.25rem;flex-wrap:wrap;}
+.ccount{font-size:13px;color:var(--text3);margin-left:auto;}
+.fgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:8px;margin-top:.75rem;}
+.fcheck{display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:var(--r-md);border:0.5px solid var(--border);background:var(--bg2);cursor:pointer;font-size:13px;color:var(--text);user-select:none;transition:border-color .12s,background .12s;}
+.fcheck:hover{border-color:var(--border2);}
+.fcheck input{accent-color:var(--text);width:14px;height:14px;}
+.fcheck.on{background:var(--bg);border-color:var(--border3);font-weight:600;}
+.prog-label{font-size:13px;color:var(--text2);margin-bottom:8px;}
+.prog-track{height:4px;background:var(--bg2);border-radius:99px;overflow:hidden;}
+.prog-fill{height:100%;background:var(--text);border-radius:99px;transition:width .4s ease;width:0%;}
+.prog-stats{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
+.spill{font-size:12px;padding:3px 10px;border-radius:99px;display:flex;align-items:center;gap:4px;}
+.sp-g{background:var(--green-bg);color:var(--green-tx);}
+.sp-a{background:var(--amber-bg);color:var(--amber-tx);}
+.sp-r{background:var(--red-bg);color:var(--red-tx);}
+.res-hdr{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:1rem;}
+.res-title{font-size:16px;font-weight:700;}
+.res-acts{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.srchwrap{display:flex;align-items:center;gap:6px;height:34px;padding:0 10px;border:0.5px solid var(--border2);border-radius:var(--r-md);background:var(--bg);}
+.srchwrap input{border:none;background:transparent;outline:none;font-size:13px;color:var(--text);width:180px;}
+.srchwrap input::placeholder{color:var(--text3);}
+.rcard{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--r-lg);padding:1.25rem;margin-bottom:.75rem;}
+.rcard:hover{border-color:var(--border2);}
+.rcard-hdr{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px;}
+.rcard-left{display:flex;align-items:center;gap:12px;}
+.avatar{width:44px;height:44px;border-radius:var(--r-md);border:0.5px solid var(--border);overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:var(--text2);background:var(--bg2);}
+.avatar img{width:100%;height:100%;object-fit:contain;}
+.rcard-name{font-size:15px;font-weight:700;color:var(--text);}
+.rcard-sub{font-size:12px;color:var(--text3);margin-top:2px;}
+.badge{font-size:11px;padding:3px 9px;border-radius:99px;display:inline-flex;align-items:center;gap:4px;white-space:nowrap;}
+.b-ok{background:var(--green-bg);color:var(--green-tx);}
+.b-ld{background:var(--amber-bg);color:var(--amber-tx);}
+.b-err{background:var(--red-bg);color:var(--red-tx);}
+.flds{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;border-top:0.5px solid var(--border);padding-top:14px;}
+.fld{display:flex;align-items:flex-start;gap:8px;}
+.fld-ico{font-size:16px;flex-shrink:0;margin-top:1px;color:var(--text3);}
+.fld-lbl{font-size:11px;color:var(--text3);display:block;margin-bottom:1px;}
+.fld-val{font-size:13px;color:var(--text);word-break:break-word;}
+.fld-val a{color:var(--blue-tx);text-decoration:none;}
+.fld-val a:hover{text-decoration:underline;}
+.fld-na{font-size:13px;color:var(--text3);font-style:italic;}
+/* CSR field gets a special purple tint */
+.fld.csr-fld .fld-ico{color:var(--purple-tx);}
+.csr-pill{display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:2px 8px;border-radius:99px;background:var(--purple-bg);color:var(--purple-tx);border:0.5px solid var(--purple-tx);margin-top:3px;}
+.src-info{font-size:11px;color:var(--text3);margin-top:10px;padding-top:10px;border-top:0.5px solid var(--border);}
+.skel{background:var(--bg2);border-radius:4px;display:block;animation:shim 1.4s ease-in-out infinite;height:13px;}
+@keyframes shim{0%,100%{opacity:1}50%{opacity:.3}}
+.empty{text-align:center;padding:4rem 1rem;color:var(--text3);font-size:14px;}
+.empty .ei{font-size:40px;display:block;margin-bottom:10px;}
+.notice{font-size:12px;background:var(--blue-bg);color:var(--blue-tx);border-radius:var(--r-md);padding:.75rem 1rem;border:0.5px solid var(--blue-tx);margin-bottom:1rem;line-height:1.5;}
+.footer{text-align:center;margin-top:2.5rem;font-size:12px;color:var(--text3);}
+.sample-btn{font-size:12px;color:var(--blue-tx);cursor:pointer;text-decoration:underline;background:none;border:none;padding:0;}
+@media(max-width:600px){body{padding:1rem .75rem;}.hdr-top{flex-direction:column;}}
+
+.src-dot-gold{width:6px;height:6px;border-radius:50%;background:var(--gold-tx);display:inline-block;}
+.src-dot-purple{width:6px;height:6px;border-radius:50%;background:var(--purple-tx);display:inline-block;}
+.api-panel{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--r-lg);padding:1.25rem 1.5rem;margin-bottom:1rem;}
+.api-panel-title{font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px;margin-bottom:0;cursor:pointer;user-select:none;}
+.api-panel-title .toggle-ico{font-size:11px;color:var(--text3);margin-left:auto;}
+.api-body{margin-top:.85rem;}
+.api-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+@media(max-width:600px){.api-grid{grid-template-columns:1fr;}}
+.api-row{display:flex;flex-direction:column;gap:5px;}
+.api-lbl{font-size:12px;font-weight:600;color:var(--text2);display:flex;align-items:center;gap:6px;}
+.api-input-wrap{display:flex;gap:6px;}
+.api-input{flex:1;height:34px;padding:0 10px;font-size:13px;border:0.5px solid var(--border2);border-radius:var(--r-md);background:var(--bg);color:var(--text);font-family:monospace;}
+.api-input:focus{outline:none;border-color:var(--border3);}
+.api-input::placeholder{color:var(--text3);font-family:'Segoe UI',system-ui,sans-serif;}
+.api-hint{font-size:11px;color:var(--text3);line-height:1.4;}
+.api-hint a{color:var(--blue-tx);}
+.b-ai{background:var(--purple-bg);color:var(--purple-tx);}
+.b-apollo{background:var(--gold-bg);color:var(--gold-tx);}
+.ai-note{font-size:10px;background:var(--purple-bg);color:var(--purple-tx);padding:1px 6px;border-radius:99px;display:inline-block;margin-left:4px;vertical-align:middle;}
+.sp-p{background:var(--purple-bg);color:var(--purple-tx);}
+.sp-gold{background:var(--gold-bg);color:var(--gold-tx);}
+
+</style>
+
+<!-- SheetJS: reads Excel (.xlsx/.xls) files in the browser, no server needed -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<!-- PDF.js: reads PDF files in the browser, extracts text, no server needed -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+  // workerSrc is set lazily inside handleFile() right before use
+  // so pdfjsLib is guaranteed to be loaded by then.
+</script>
+</head>
+<body>
+<div class="wrap">
+
+<div class="hdr">
+  <div class="hdr-top">
+    <div class="logo">
+      <div class="logo-icon">🏢</div>
+      <div class="logo-text">
+        <h1>Company Contact Lookup</h1>
+        <p>Upload CSV, Excel or PDF — enriched from free + Apollo + Claude AI</p>
+      </div>
+    </div>
+    <div class="free-badge">✓ FREE + Apollo + Claude AI</div>
+  </div>
+  <div class="sources">
+    <div class="src-pill"><span class="src-dot"></span> Wikidata (facts, phone, email)</div>
+    <div class="src-pill"><span class="src-dot"></span> Wikipedia (description, CSR)</div>
+    <div class="src-pill"><span class="src-dot"></span> OpenCorporates (MCA registration)</div>
+    <div class="src-pill"><span class="src-dot"></span> DuckDuckGo (contact fallback)</div>
+    <div class="src-pill"><span class="src-dot"></span> Clearbit Logo</div>
+    <div class="src-pill"><span class="src-dot-gold"></span> Apollo.io (optional)</div>
+    <div class="src-pill"><span class="src-dot-purple"></span> Claude AI fallback</div>
+  </div>
+</div>
+
+<div class="notice">
+  <strong>How enrichment works:</strong> Each company is queried through <strong>Wikidata → Wikipedia → OpenCorporates → DuckDuckGo</strong> for free public data. If you add an <strong>Apollo API key</strong>, it fetches HR contacts from Apollo.io. Add your <strong>Anthropic API key</strong> to enable Claude AI filling any remaining gaps — especially useful for companies not on Wikipedia. Fields filled by AI are marked with a small <span style="background:var(--purple-bg);color:var(--purple-tx);font-size:10px;padding:1px 6px;border-radius:99px;">AI</span> tag.
+</div>
+
+
+<!-- API KEYS PANEL -->
+<div class="api-panel">
+  <div class="api-panel-title" onclick="toggleApiPanel()">
+    <span>🔑</span> API Keys (optional — expand to configure)
+    <span class="toggle-ico" id="apiToggleIco">▲ collapse</span>
+  </div>
+  <div id="apiBody" class="api-body" style="display:block;">
+    <div class="api-grid">
+      <div class="api-row">
+        <div class="api-lbl">🟡 Apollo.io API Key <span class="badge b-apollo" style="font-size:10px;padding:1px 7px;border-radius:99px;">Recommended for HR contacts</span></div>
+        <div class="api-input-wrap">
+          <input class="api-input" type="password" id="apolloKey" placeholder="Paste your Apollo API key here…" oninput="saveKeys()">
+        </div>
+        <div class="api-hint">Free tier: 50 credits/month. Get your key at <a href="https://app.apollo.io/#/settings/integrations/api" target="_blank">apollo.io → Settings → API</a>. Returns: HR person name, title, email, LinkedIn URL.</div>
+      </div>
+      <div class="api-row">
+        <div class="api-lbl">🟣 Claude AI (Anthropic) <span class="badge b-ai" style="font-size:10px;padding:1px 7px;border-radius:99px;">Required for AI fill</span></div>
+        <div class="api-input-wrap">
+          <input class="api-input" type="password" id="anthropicKey" placeholder="Paste your Anthropic API key here (sk-ant-…)" oninput="saveKeys()">
+        </div>
+        <div class="api-hint">Required to fill missing fields with AI. Get your key at <a href="https://console.anthropic.com/settings/keys" target="_blank">console.anthropic.com → API Keys</a>. Free tier available. Results are marked <span style="background:var(--purple-bg);color:var(--purple-tx);font-size:10px;padding:1px 6px;border-radius:99px;">AI</span>.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="stepbar">
+  <div class="stp on" id="s1"><div class="stp-n" id="sn1">1</div>Add companies</div>
+  <div class="stp-line"></div>
+  <div class="stp" id="s2"><div class="stp-n" id="sn2">2</div>Choose fields</div>
+  <div class="stp-line"></div>
+  <div class="stp" id="s3"><div class="stp-n" id="sn3">3</div>Enrich &amp; review</div>
+  <div class="stp-line"></div>
+  <div class="stp" id="s4"><div class="stp-n" id="sn4">4</div>Export</div>
+</div>
+
+<!-- INPUT PANEL -->
+<div class="panel" id="pInput">
+  <div class="ptitle"><span class="ico">📋</span>Add company names</div>
+  <div class="dropzone" id="dz" onclick="document.getElementById('csvFile').click()">
+    <span class="dz-ico">📂</span>
+    <p class="dz-txt">Click to upload CSV / Excel / PDF &nbsp;or&nbsp; drag &amp; drop</p>
+    <p class="dz-hint">One column of company names — header row auto-skipped</p>
+    <div id="fnDisplay" style="display:none;"></div>
+  </div>
+  <div id="pdfStatus" style="display:none;font-size:13px;color:var(--text2);margin-top:8px;"></div>
+  <input type="file" id="csvFile" accept=".csv,.txt,.xlsx,.xls,.pdf">
+  <div style="margin-top:6px;display:flex;justify-content:flex-end;">
+    <button class="sample-btn" onclick="dlSample()">⬇ Download sample CSV</button>
+  </div>
+  <div class="divrow"><hr><span>or type manually</span><hr></div>
+  <div class="man-row">
+    <input type="text" id="cInput" placeholder="e.g. Infosys, Tata Consultancy Services, Wipro…"/>
+    <button class="btn" onclick="addOne()">+ Add</button>
+  </div>
+  <div class="tags" id="tagArea"><span class="tags-empty">No companies added yet</span></div>
+  <div class="act">
+    <button class="btn btn-solid" id="nextBtn" onclick="goFields()" disabled>Next: Choose fields →</button>
+    <button class="btn" onclick="resetAll()">🗑 Clear all</button>
+    <span class="ccount" id="ccount"></span>
+  </div>
+</div>
+
+<!-- FIELD PANEL -->
+<div class="panel" id="pFields" style="display:none;">
+  <div class="ptitle"><span class="ico">🔧</span>Choose what to look up</div>
+  <p style="font-size:13px;color:var(--text2);margin-bottom:.75rem;">Select the fields you want enriched. Fewer fields = faster results.</p>
+  <div class="fgrid" id="fgrid"></div>
+  <div class="act">
+    <button class="btn btn-solid" onclick="startEnrich()">🚀 Start enrichment</button>
+    <button class="btn" onclick="goBack()">← Back</button>
+    <button class="btn btn-sm" onclick="selAll()">Select all</button>
+    <button class="btn btn-sm" onclick="deselAll()">Deselect all</button>
+  </div>
+</div>
+
+<!-- PROGRESS -->
+<div class="panel" id="pProg" style="display:none;">
+  <div class="ptitle"><span class="ico">⚡</span>Enriching…</div>
+  <div class="prog-label" id="pLabel">Starting…</div>
+  <div class="prog-track"><div class="prog-fill" id="pFill"></div></div>
+  <div class="prog-stats" id="pStats"></div>
+</div>
+
+<!-- RESULTS -->
+<div id="pResults" style="display:none;">
+  <div class="res-hdr">
+    <div class="res-title" id="resTitle">Results</div>
+    <div class="res-acts">
+      <div class="srchwrap">
+        <span>🔍</span>
+        <input type="text" placeholder="Search…" id="srch" oninput="doFilter()">
+      </div>
+      <button class="btn" onclick="expCSV()">⬇ Export CSV</button>
+      <button class="btn" onclick="expXLSX()">⬇ Export Excel</button>
+      <button class="btn" onclick="expJSON()">⬇ Export JSON</button>
+      <button class="btn" onclick="resetAll()">🔄 New lookup</button>
+    </div>
+  </div>
+  <div id="rGrid"></div>
+</div>
+
+<div class="footer">Data from Wikidata · Wikipedia · OpenCorporates · DuckDuckGo · Apollo.io · Claude AI — always verify before use.</div>
+</div>
+
+<script>
+
+// ═══════════════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════════════
+let companies = [];
+let results   = [];
+
+// ═══════════════════════════════════════════════════════════════
+//  API KEYS
+// ═══════════════════════════════════════════════════════════════
+function saveKeys(){
+  const ak = document.getElementById('apolloKey').value.trim();
+  const ck = document.getElementById('anthropicKey').value.trim();
+  if(ak) sessionStorage.setItem('apolloKey', ak);
+  if(ck) sessionStorage.setItem('anthropicKey', ck);
+}
+function getApolloKey(){    return document.getElementById('apolloKey').value.trim()    || sessionStorage.getItem('apolloKey')    || ''; }
+function getAnthropicKey(){ return document.getElementById('anthropicKey').value.trim() || sessionStorage.getItem('anthropicKey') || ''; }
+function toggleApiPanel(){
+  const b = document.getElementById('apiBody');
+  const t = document.getElementById('apiToggleIco');
+  const open = b.style.display !== 'none';
+  b.style.display = open ? 'none' : 'block';
+  t.textContent = open ? '▼ expand' : '▲ collapse';
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+//  FIELDS  — every field the tool can enrich
+//  key        : internal name used in data objects
+//  label      : shown in UI and exported to CSV
+//  ico        : emoji icon shown on the card
+//  on         : true = checked by default
+// ═══════════════════════════════════════════════════════════════
+const FIELDS = [
+  { key:'phone',       label:'Phone number',       ico:'📞', on:true  },
+  { key:'email',       label:'Email address',      ico:'📧', on:true  },
+  { key:'website',     label:'Website URL',        ico:'🌐', on:true  },
+  { key:'address',     label:'HQ Address',         ico:'📍', on:true  },
+  { key:'industry',    label:'Industry / sector',  ico:'🏭', on:true  },
+  { key:'description', label:'About the company',  ico:'📝', on:true  },
+  { key:'csr',         label:'CSR',                ico:'🌱', on:true  },
+  { key:'founded',     label:'Founded year',       ico:'📅', on:true  },
+  { key:'employees',   label:'Employees',          ico:'👥', on:true  },
+  { key:'revenue',     label:'Annual revenue',     ico:'💰', on:true  },
+  { key:'ceo',         label:'CEO / Founder',      ico:'👤', on:true  },
+  { key:'stockTicker', label:'Stock ticker',       ico:'📈', on:true  },
+  { key:'cin',         label:'CIN (MCA reg no.)',  ico:'🏛',  on:true  },
+  { key:'hr_contact',   label:'HR Contact name',    ico:'👩‍💼', on:true  },
+  { key:'hr_email',     label:'HR Contact email',   ico:'📨', on:true  },
+  { key:'hr_title',     label:'HR Contact title',   ico:'🪪',  on:true  },
+  { key:'country',      label:'Country',            ico:'🗺',  on:false },
+];
+
+// ═══════════════════════════════════════════════════════════════
+//  FIELD CHECKBOXES
+// ═══════════════════════════════════════════════════════════════
+function renderFGrid(){
+  document.getElementById('fgrid').innerHTML = FIELDS.map((f,i)=>`
+    <label class="fcheck ${f.on?'on':''}" id="fl${i}">
+      <input type="checkbox" id="fc${i}" ${f.on?'checked':''} onchange="toggleF(${i})">
+      ${f.ico} ${f.label}
+    </label>`).join('');
+}
+function toggleF(i){ FIELDS[i].on=document.getElementById('fc'+i).checked; document.getElementById('fl'+i).classList.toggle('on',FIELDS[i].on); }
+function selAll()  { FIELDS.forEach((_,i)=>{ FIELDS[i].on=true;  document.getElementById('fc'+i).checked=true;  document.getElementById('fl'+i).classList.add('on'); }); }
+function deselAll(){ FIELDS.forEach((_,i)=>{ FIELDS[i].on=false; document.getElementById('fc'+i).checked=false; document.getElementById('fl'+i).classList.remove('on'); }); }
+
+// ═══════════════════════════════════════════════════════════════
+//  CSV / FILE UPLOAD
+// ═══════════════════════════════════════════════════════════════
+const dz = document.getElementById('dz');
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('over');});
+dz.addEventListener('dragleave',()=>dz.classList.remove('over'));
+dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('over');handleFile(e.dataTransfer.files[0]);});
+document.getElementById('csvFile').addEventListener('change',function(){handleFile(this.files[0]);this.value='';});
+
+// ═══════════════════════════════════════════════════════
+//  FILE HANDLER — supports CSV, Excel (.xlsx/.xls), PDF
+//
+//  HOW IT WORKS:
+//  1. User uploads any file
+//  2. We check the file extension
+//  3. For CSV  → read as plain text → split by newlines → extract col 1
+//  4. For Excel→ use SheetJS library → convert sheet to array → extract col 1
+//  5. For PDF  → use PDF.js library → extract all text → find lines that
+//               look like company names (not numbers, headers, etc.)
+//  All formats end up calling addNamesToList() with a plain string array.
+// ═══════════════════════════════════════════════════════
+function handleFile(file){
+  if(!file) return;
+  const ext = file.name.split('.').pop().toLowerCase();
+
+  if(ext==='pdf'){
+    // PDF: read as ArrayBuffer (binary) → PDF.js extracts text
+    const reader = new FileReader();
+    reader.onload = async e => {
+      try{
+        const typedArr = new Uint8Array(e.target.result);
+        // Set workerSrc here so pdfjsLib is definitely loaded
+        pdfjsLib.GlobalWorkerOptions.workerSrc =
+          'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        const pdf      = await pdfjsLib.getDocument({ data: typedArr }).promise;
+        let allText    = '';
+        // Loop through every page and extract text
+        for(let p=1; p<=pdf.numPages; p++){
+          const page    = await pdf.getPage(p);
+          const content = await page.getTextContent();
+          // Each text item has a .str property — join them with newlines
+          allText += content.items.map(i=>i.str).join('\n') + '\n';
+        }
+        // Now parse the extracted text as if it were a CSV
+        parseTextLines(allText, file.name);
+      }catch(err){
+        showFileError('Could not read PDF: ' + err.message);
+      }
+    };
+    reader.readAsArrayBuffer(file);  // must be ArrayBuffer for PDF.js
+
+  } else if(ext==='xlsx'||ext==='xls'||ext==='ods'){
+    // Excel: read as ArrayBuffer → SheetJS parses it
+    const reader = new FileReader();
+    reader.onload = e => {
+      try{
+        const wb    = XLSX.read(e.target.result, { type:'array' });
+        const ws    = wb.Sheets[wb.SheetNames[0]]; // first sheet
+        // sheet_to_json with header:1 gives us an array of arrays
+        const rows  = XLSX.utils.sheet_to_json(ws, { header:1, defval:'' });
+        // Convert rows to plain text lines (take first column of each row)
+        const lines = rows.map(row=>String(row[0]||'')).join('\n');
+        parseTextLines(lines, file.name);
+      }catch(err){
+        showFileError('Could not read Excel file: ' + err.message);
+      }
+    };
+    reader.readAsArrayBuffer(file);  // must be ArrayBuffer for SheetJS
+
+  } else {
+    // CSV / TXT: plain text — read directly
+    const reader = new FileReader();
+    reader.onload = e => parseTextLines(e.target.result, file.name);
+    reader.readAsText(file);
+  }
+}
+
+function parseTextLines(text, fname){
+  // Skip rows that are clearly not company names:
+  //   - empty lines
+  //   - known header words
+  //   - lines that are pure numbers
+  //   - very short lines (1-2 chars)
+  //   - lines that look like PDF metadata (starting with / or %)
+  const skip = ['company name','company','name','companies',
+                'organization','organisation','sr no','sr.',
+                's.no','serial','no.','#'];
+  let added = 0;
+  text.split(/\r?\n/).forEach(raw=>{
+    // Clean the line: remove quotes, take first comma-separated value
+    const line = raw.replace(/["\']/g,'').split(',')[0].trim();
+    if(!line) return;
+    if(line.length < 3) return;                          // too short
+    if(/^\d+$/.test(line)) return;                      // pure number
+    if(/^[/%]/.test(line)) return;                       // PDF metadata
+    if(skip.includes(line.toLowerCase())) return;        // header row
+    if(!companies.includes(line)){
+      companies.push(line); added++;
+    }
+  });
+  const d = document.getElementById('fnDisplay');
+  d.style.display = 'block';
+  d.innerHTML = `<span class="fname">✓ ${fname} — ${added} compan${added===1?'y':'ies'} loaded</span>`;
+  if(added===0){
+    d.innerHTML += '<span style="color:var(--red-tx);font-size:12px;margin-left:8px;">⚠ No company names found — check your file has names in the first column</span>';
+  }
+  renderTags();
+}
+
+function showFileError(msg){
+  const d = document.getElementById('fnDisplay');
+  d.style.display='block';
+  d.innerHTML=`<span style="color:var(--red-tx);font-size:13px;">❌ ${msg}</span>`;
+}
+
+function dlSample(){
+  dlFile('Company Name\nInfosys\nTata Consultancy Services\nWipro\nReliance Industries\nHDFC Bank','sample_companies.csv','text/csv');
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  MANUAL ADD
+// ═══════════════════════════════════════════════════════════════
+document.getElementById('cInput').addEventListener('keydown',e=>{if(e.key==='Enter')addOne();});
+function addOne(){
+  const v=document.getElementById('cInput').value.trim();
+  if(v&&!companies.includes(v)){ companies.push(v); renderTags(); }
+  document.getElementById('cInput').value=''; document.getElementById('cInput').focus();
+}
+function removeC(name){ companies=companies.filter(c=>c!==name); renderTags(); }
+function renderTags(){
+  const a=document.getElementById('tagArea');
+  if(!companies.length){
+    a.innerHTML='<span class="tags-empty">No companies added yet</span>';
+    document.getElementById('ccount').textContent='';
+    document.getElementById('nextBtn').disabled=true; return;
+  }
+  a.innerHTML=companies.map(c=>`<div class="tag">${esc(c)}<button class="tag-x" onclick="removeC('${escA(c)}')" title="Remove">×</button></div>`).join('');
+  document.getElementById('ccount').textContent=`${companies.length} compan${companies.length===1?'y':'ies'}`;
+  document.getElementById('nextBtn').disabled=false;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  NAVIGATION
+// ═══════════════════════════════════════════════════════════════
+function goFields(){ document.getElementById('pInput').style.display='none'; document.getElementById('pFields').style.display='block'; renderFGrid(); setStep(2); }
+function goBack(){   document.getElementById('pFields').style.display='none'; document.getElementById('pInput').style.display='block';  setStep(1); }
+function resetAll(){
+  companies=[]; results=[];
+  ['pInput','pFields','pProg','pResults'].forEach(id=>{ document.getElementById(id).style.display=id==='pInput'?'block':'none'; });
+  document.getElementById('fnDisplay').style.display='none';
+  renderTags(); setStep(1);
+}
+function setStep(n){
+  [1,2,3,4].forEach(i=>{
+    const el=document.getElementById('s'+i), nm=document.getElementById('sn'+i);
+    el.className='stp'+(i<n?' ok':i===n?' on':'');
+    nm.textContent=i<n?'✓':String(i);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  API HELPERS
+// ═══════════════════════════════════════════════════════════════
+
+// PROXY — routes requests through corsproxy.io (free, no key needed)
+// WHY: Browsers block direct calls to APIs that don't have CORS headers.
+//      A CORS proxy sits in the middle and forwards the request, adding
+//      the required headers so the browser accepts the response.
+const PROXY = url => `https://corsproxy.io/?${encodeURIComponent(url)}`;
+
+// Safe fetch — never throws, returns null on failure
+async function safeFetch(url, useProxy=false){
+  try{
+    const finalUrl = useProxy ? PROXY(url) : url;
+    const r = await fetch(finalUrl, {
+      headers:{ 'Accept':'application/json,text/html,*/*',
+                'User-Agent':'Mozilla/5.0' }
+    });
+    if(!r.ok) return null;
+    return r;
+  }catch{ return null; }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  SOURCE 1 — WIKIDATA
+//
+//  Wikidata stores company facts as property IDs (P-numbers).
+//  We fetch the entity for the company name, then extract:
+//    P856=website  P1329=phone  P968=email   P571=founded
+//    P1128=employees  P2139=revenue  P249=ticker  P414=exchange
+//    P169=CEO  P488=chairperson  P112=founder
+//    P452=industry  P17=country  P159=HQ location
+//
+//  FIX applied: ALL resolveLabel calls now include &origin=*
+//  so the browser doesn't block them with CORS errors.
+// ═══════════════════════════════════════════════════════════════
+async function fetchWikidata(name){
+  // Step 1 — search for the entity
+  const sr = await safeFetch(
+    `https://www.wikidata.org/w/api.php?action=wbsearchentities`+
+    `&search=${encodeURIComponent(name)}&language=en&type=item`+
+    `&format=json&origin=*&limit=8`
+  );
+  if(!sr) return null;
+  const sd = await sr.json();
+  if(!sd.search?.length) return null;
+
+  // Step 2 — score candidates to find the best company match
+  const compKws = ['compan','corporat','enterprise','bank','firm','organisation',
+                   'organization','group','technolog','industri','limited','ltd',
+                   'software','consult','service','manufactur','financ','insuran',
+                   'pharma','infotech','solutions','systems','holdings','conglomerate'];
+  const indKws  = ['india','indian','mumbai','delhi','bengaluru','bangalore',
+                   'hyderabad','chennai','pune','kolkata','bse','nse','sensex'];
+  const badKws  = ['politician','actor','singer','born in','footballer','cricketer',
+                   'species','genus','fruit','village','river','film','album','song'];
+
+  let best=null, bestScore=-999;
+  const nameLower = name.toLowerCase();
+  for(const item of sd.search){
+    let score=0;
+    const lbl  = (item.label||'').toLowerCase();
+    const desc = (item.description||'').toLowerCase();
+    if(lbl===nameLower)                                    score+=60;
+    else if(lbl.includes(nameLower))                       score+=30;
+    else if(nameLower.includes(lbl))                       score+=20;
+    if(compKws.some(k=>desc.includes(k)))                  score+=25;
+    if(indKws.some(k=>desc.includes(k)))                   score+=20;
+    if(badKws.some(k=>desc.includes(k)))                   score-=60;
+    if(score>bestScore){ bestScore=score; best=item; }
+  }
+  if(!best) best=sd.search[0];
+  const eid = best.id;
+
+  // Step 3 — fetch all claims for this entity
+  const er = await safeFetch(
+    `https://www.wikidata.org/w/api.php?action=wbgetentities&ids=${eid}`+
+    `&props=claims|descriptions|sitelinks&languages=en&format=json&origin=*`
+  );
+  if(!er) return null;
+  const ed = await er.json();
+  const entity = ed.entities?.[eid];
+  if(!entity) return null;
+  const claims = entity.claims||{};
+
+  // Helper: extract a value from a claim
+  const get = (pid, type='string') => {
+    for(const c of (claims[pid]||[])){
+      const ms=c.mainsnak; if(ms?.snaktype!=='value') continue;
+      const dv=ms.datavalue; if(!dv) continue;
+      const v=dv.value;
+      if(type==='string') return typeof v==='string' ? v : null;
+      if(type==='time'){
+        const t = (typeof v==='object'?v.time:String(v))||'';
+        const m=t.match(/(\d{4})/); return m?m[1]:null;
+      }
+      if(type==='amount'){
+        const a = (typeof v==='object'?v.amount:String(v))||'';
+        return String(a).replace(/^\+/,'');
+      }
+      if(type==='entity') return typeof v==='object'?v.id:null;
+    }
+    return null;
+  };
+
+  // Helper: resolve a Q-ID to a label
+  // FIX: added &origin=* so browser doesn't block this call
+  const label = async qid => {
+    if(!qid) return null;
+    const r = await safeFetch(
+      `https://www.wikidata.org/w/api.php?action=wbgetentities&ids=${qid}`+
+      `&props=labels&languages=en&format=json&origin=*`
+    );
+    if(!r) return null;
+    try{ return (await r.json()).entities?.[qid]?.labels?.en?.value||null; }
+    catch{ return null; }
+  };
+
+  const out={};
+  out.website     = get('P856');
+  if(
+  out.website &&
+  !out.website.startsWith('http')
+){
+  out.website =
+    'https://' + out.website;
+}
+  out.phone       = get('P1329');
+  const em        = get('P968'); out.email = em?.replace('mailto:','')||null;
+  out.founded     = get('P571','time');
+
+  // Stock ticker + exchange
+  const ticker    = get('P249');
+  const exchQid   = get('P414','entity');
+  const exchName  = exchQid ? await label(exchQid) : null;
+  out.stockTicker = ticker ? (exchName?`${ticker} (${exchName})`:ticker) : null;
+
+  // Employees — try P1128 then P1082
+  const emp = get('P1128','amount')||get('P1082','amount');
+  if(emp){ try{ out.employees=`${parseInt(emp).toLocaleString()}`; }catch{ out.employees=emp; } }
+
+  // Revenue — P2139
+  const rev = get('P2139','amount');
+  if(rev){ const n=parseFloat(rev); out.revenue=n>=1e12?`₹${(n/1e12).toFixed(1)}T`:n>=1e9?`$${(n/1e9).toFixed(1)}B`:n>=1e6?`$${(n/1e6).toFixed(0)}M`:null; }
+
+  // CEO / chairperson / founder
+  const ceoQid = get('P169','entity')||get('P488','entity')||get('P112','entity');
+  out.ceo = await label(ceoQid);
+
+  // Industry, country, HQ city
+  out.industry = await label(get('P452','entity'));
+  out.country  = await label(get('P17','entity'));
+  const hqLbl  = await label(get('P159','entity'));
+  if(hqLbl) out.address = hqLbl;
+
+  out.description = entity.descriptions?.en?.value||null;
+  out._wpTitle    = entity.sitelinks?.enwiki?.title||null;
+  return out;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  SOURCE 2 — WIKIPEDIA
+//  Free REST API — no CORS issues, no proxy needed.
+//  /page/summary  → clean description paragraph
+//  /page/mobile-sections → all article sections → find CSR section
+// ═══════════════════════════════════════════════════════════════
+async function fetchWikipedia(title){
+  if(!title) return {};
+  const out={};
+  try{
+    const r = await safeFetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`);
+    if(r){
+      const d=await r.json();
+      const txt=d.extract?.split('\n')[0]||'';
+      out.description = txt.length>280 ? txt.slice(0,280)+'…' : txt;
+    }
+  }catch{}
+  try{
+    const r2 = await safeFetch(`https://en.wikipedia.org/api/rest_v1/page/mobile-sections/${encodeURIComponent(title)}`);
+    if(r2){
+      const pd=await r2.json();
+      const csrKws=['corporate social','csr','sustainability','social responsib','philanthropy','community'];
+      const sec=(pd.remaining?.sections||[]).find(s=>csrKws.some(k=>(s.line||'').toLowerCase().includes(k)));
+      if(sec?.text){
+        const plain=sec.text.replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim();
+        out.csr = plain.length>350 ? plain.slice(0,350)+'…' : plain;
+      }
+    }
+  }catch{}
+  return out;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  SOURCE 3 — OPENCORPORATES (MCA data: CIN, address, status)
+//
+//  FIX: replaced dead allorigins.win proxy with corsproxy.io
+//  OpenCorporates mirrors India's MCA registry.
+//  Gives us: CIN number, registered address, company status.
+// ═══════════════════════════════════════════════════════════════
+async function fetchOpenCorp(name){
+  const tryFetch = async jurisdiction => {
+    const apiUrl = `https://api.opencorporates.com/v0.4/companies/search?q=${encodeURIComponent(name)}`+
+                   (jurisdiction?`&jurisdiction_code=${jurisdiction}`:'')+`&format=json&per_page=3`;
+    const r = await safeFetch(apiUrl, true); // true = use CORS proxy
+    if(!r) return null;
+    try{
+      const d=await r.json();
+      return d?.results?.companies||null;
+    }catch{ return null; }
+  };
+
+  let cos = await tryFetch('in');           // India first
+  if(!cos?.length) cos = await tryFetch(''); // global fallback
+  if(!cos?.length) return null;
+
+  const co =
+cos.find(x =>
+  x.company.name.toLowerCase()
+  .includes(name.toLowerCase())
+)?.company || cos[0].company;
+  const addr = co.registered_address||{};
+  return {
+    cin:     co.company_number||null,
+    address: addr.in_full||addr.street_address||null,
+    country: (co.jurisdiction_code||'').split('_')[0].toUpperCase()||null,
+    company_status: co.current_status||null,
+    company_type:   co.company_type||null,
+    _ocUrl:  co.opencorporates_url||null,
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  SOURCE 4 — DUCKDUCKGO INSTANT ANSWER
+//
+//  FIX: was calling api.duckduckgo.com directly (CORS blocked).
+//  Now routes through corsproxy.io.
+//  DDG parses Wikipedia infoboxes and returns structured fields:
+//  phone, employees, revenue, CEO, address, founded, website.
+// ═══════════════════════════════════════════════════════════════
+async function fetchDDG(name){
+  const ddgUrl = `https://api.duckduckgo.com/?q=${encodeURIComponent(name)}&format=json&no_html=1&skip_disambig=1`;
+  const r = await safeFetch(ddgUrl, true); // true = use CORS proxy
+  if(!r) return null;
+  let d;
+  try{ d=await r.json(); }catch{ return null; }
+
+  const out={};
+  if(d.OfficialWebsite) out.website=d.OfficialWebsite;
+  if(d.AbstractText?.length>30) out.description=d.AbstractText.slice(0,280);
+
+  // Parse infobox — most valuable part of DDG response
+  for(const item of (d.Infobox?.content||[])){
+    const lbl=(item.label||'').toLowerCase();
+    const val=(item.value||'').trim();
+    if(!val||val==='N/A') continue;
+    if(['phone','telephone','helpline'].some(k=>lbl.includes(k)))      out.phone=val;
+    else if(['email','e-mail'].some(k=>lbl.includes(k)))               out.email=val.replace('mailto:','');
+    else if(['founded','established','inception'].some(k=>lbl.includes(k))){ const y=val.match(/\d{4}/); if(y&&!out.founded) out.founded=y[0]; }
+    else if(['employee','staff','workforce'].some(k=>lbl.includes(k))) out.employees=val;
+    else if(['revenue','turnover'].some(k=>lbl.includes(k)))           out.revenue=val;
+    else if(['ceo','chief exec','managing director','chairman','founder'].some(k=>lbl.includes(k))) out.ceo=val;
+    else if(['headquarter','location','address'].some(k=>lbl.includes(k))) out.address=val;
+    else if(['industry','sector'].some(k=>lbl.includes(k)))            out.industry=val;
+  }
+  return Object.keys(out).length ? out : null;
+}
+
+async function fetchWebsiteContactInfo(website){
+
+  if(!website) return {};
+
+  const result = {};
+
+  try{
+
+    const pages = [
+      website,
+      website.replace(/\/$/, '') + '/contact',
+      website.replace(/\/$/, '') + '/contact-us',
+      website.replace(/\/$/, '') + '/about'
+    ];
+
+    for(const page of pages){
+
+      try{
+
+        const r = await safeFetch(page, true);
+
+        if(!r) continue;
+
+        const html = await r.text();
+
+        // EMAIL
+
+        const emails = html.match(
+          /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi
+        );
+
+        if(emails && !result.email){
+          result.email = [...new Set(emails)][0];
+        }
+
+        // PHONE
+
+        const phones = html.match(
+          /(\+?\d[\d\s\-()]{8,20})/g
+        );
+
+        if(phones && !result.phone){
+          result.phone = phones[0];
+        }
+
+        if(result.email && result.phone){
+          break;
+        }
+
+      }catch(e){}
+    }
+
+  }catch(e){}
+
+  return result;
+}
+
+// Clearbit logo from website domain
+function getLogoUrl(website){
+  if(!website) return null;
+  try{ const d=new URL(website.startsWith('http')?website:'https://'+website).hostname.replace(/^www\./,''); return `https://logo.clearbit.com/${d}`; }
+  catch{ return null; }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  SOURCE 5 — APOLLO.IO
+//  Searches for HR contacts at the company using Apollo's API.
+//  Free tier: 50 credits/month. Key entered in the API Keys panel.
+//  Returns: HR name, title, email, LinkedIn; also org-level fields.
+// ═══════════════════════════════════════════════════════════════
+async function fetchApollo(companyName, apiKey){
+  if(!apiKey) return null;
+
+  // Apollo supports api_key as a URL query param — no custom headers
+  // needed, so no CORS proxy required. Direct fetch works fine.
+  const apolloPost = async (endpoint, body) => {
+    const url = `https://api.apollo.io${endpoint}?api_key=${encodeURIComponent(apiKey)}`;
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      if (!res.ok) { console.warn('Apollo HTTP', res.status); return null; }
+      return await res.json();
+    } catch(e) { console.warn('Apollo fetch failed:', e.message); return null; }
+  };
+
+  try{
+    // Step 1: find the organisation
+    const orgData = await apolloPost('/v1/mixed_companies/search',
+      { q_organization_name: companyName, page: 1, per_page: 1 });
+    if(!orgData) return null;
+    const org = orgData.organizations?.[0];
+    const domain = org?.primary_domain || null;
+    const orgId  = org?.id || null;
+
+    // Step 2: find HR contacts
+    const searchBody = { page:1, per_page:5,
+      person_titles: ['hr','human resources','talent','recruitment','people operations','people partner','head of hr','hr manager','hr director'] };
+    if(orgId)        searchBody.organization_ids = [orgId];
+    else if(domain)  searchBody.q_organization_domains = [domain];
+    else             searchBody.q_organization_name = companyName;
+
+    const peopleData = await apolloPost('/v1/mixed_people/search', searchBody);
+    if(!peopleData) return null;
+    const people = peopleData.people || [];
+
+    const result = {};
+    if(org){
+      if(org.website_url)           result.website   = org.website_url;
+      if(org.industry)              result.industry  = org.industry;
+      if(org.estimated_num_employees) result.employees = String(org.estimated_num_employees);
+      if(org.country)               result.country   = org.country;
+      result._apolloOrg = org;
+    }
+
+    if(people.length){
+      const ranked = people.sort((a,b)=>{
+        const s=t=>(['director','vp','vice president'].some(x=>t.includes(x))?3:t.includes('manager')||t.includes('head')?2:1);
+        return s((b.title||'').toLowerCase()) - s((a.title||'').toLowerCase());
+      });
+      const c = ranked[0];
+      result.hr_contact = [c.first_name,c.last_name].filter(Boolean).join(' ')||null;
+      result.hr_title   = c.title||null;
+      result.hr_email   = c.email||null;
+      result._apolloPeople = ranked.map(p=>({
+        name:[p.first_name,p.last_name].filter(Boolean).join(' '),
+        title:p.title, email:p.email, linkedin:p.linkedin_url
+      }));
+    }
+    return Object.keys(result).length ? result : null;
+  }catch(e){ console.warn('Apollo error:',e); return null; }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  SOURCE 6 — CLAUDE AI FALLBACK
+//  Calls Anthropic API — free inside Claude.ai (no key needed).
+//  Activated when other sources leave fields empty.
+//  Fields filled by AI are flagged with _aiFields array.
+// ═══════════════════════════════════════════════════════════════
+async function fetchClaudeAI(companyName, existingData){
+  const apiKey = getAnthropicKey();
+  if(!apiKey){ console.warn('Claude AI: no Anthropic API key set — skipping.'); return null; }
+
+  const missing = FIELDS.filter(f => f.on && !existingData[f.key]).map(f => f.label);
+  if(missing.length === 0) return null;
+
+  const prompt = `You are a company research assistant. For the company "${companyName}", fill in the fields below using publicly known information. Return ONLY a valid JSON object — no markdown, no explanation, no extra text.
+
+Fields needed: ${missing.join(', ')}
+
+Also always include these if you know them:
+- "website": official website URL
+- "industry": industry/sector
+- "country": country of HQ
+- "founded": 4-digit year string
+- "employees": approximate headcount as string
+- "ceo": current CEO full name
+- "description": 1-2 sentences about what the company does
+- "address": city and country of headquarters
+- "hr_contact": name of a real publicly known HR leader (or null)
+- "hr_email": likely HR email (suggest pattern like hr@domain.com if you know the domain, clearly marked as suggested)
+- "hr_title": their job title
+- "_aiConfidence": "high" for well-known companies, "medium" for partially known, "low" for limited info
+
+Return null for any field you cannot answer with reasonable confidence. Return only the JSON object.`;
+
+  try{
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    if(!response.ok) return null;
+    const data = await response.json();
+    const text = data.content?.find(b=>b.type==='text')?.text || '';
+    const clean = text.replace(/```json|```/g,'').trim();
+    return JSON.parse(clean);
+  }catch(e){ console.warn('Claude AI error:',e); return null; }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  ENRICHMENT ORCHESTRATOR
+//  Order: Wikidata+DDG+OC (parallel) → Wikipedia → Website
+//         → Apollo (if key) → Claude AI (fills remaining gaps)
+// ═══════════════════════════════════════════════════════════════
+async function enrichCompany(name){
+  const data={company:name, _sources:[]};
+  const apolloKey = getApolloKey();
+
+  // 1. Wikidata + DDG + OpenCorporates in parallel
+  try{
+    const [wd,ddg,oc] = await Promise.all([fetchWikidata(name),fetchDDG(name),fetchOpenCorp(name)]);
+    if(wd){ data._sources.push('Wikidata'); data._wpTitle=wd._wpTitle;
+      ['website','phone','email','address','industry','description','founded','employees','revenue','ceo','country','stockTicker'].forEach(k=>{ if(!data[k]&&wd[k]) data[k]=wd[k]; }); }
+    if(ddg){ data._sources.push('DuckDuckGo'); Object.entries(ddg).forEach(([k,v])=>{ if(v&&!data[k]) data[k]=v; }); }
+    if(oc){ data._sources.push('OpenCorporates/MCA');
+      ['cin','address','country'].forEach(k=>{ if(oc[k]&&!data[k]) data[k]=oc[k]; });
+      data._companyStatus=oc.company_status; data._companyType=oc.company_type; data._ocUrl=oc._ocUrl; }
+  }catch(e){ console.warn('Parallel sources:',e); }
+
+  // 2. Wikipedia
+  try{
+    const wp=await fetchWikipedia(data._wpTitle||name);
+    if(wp.description&&!data.description) data.description=wp.description;
+    if(wp.csr){ data.csr=wp.csr; data._sources.push('Wikipedia'); }
+  }catch(e){ console.warn('Wikipedia:',e); }
+
+  // 3. Website contact scrape
+  try{
+    if(data.website){
+      const webInfo=await fetchWebsiteContactInfo(data.website);
+      if(webInfo.email&&!data.email) data.email=webInfo.email;
+      if(webInfo.phone&&!data.phone) data.phone=webInfo.phone;
+      if(webInfo.email||webInfo.phone) data._sources.push('Website');
+    }
+  }catch(e){ console.warn('Website scrape:',e); }
+
+  // 4. Apollo — HR contacts + org data (only if key provided)
+  try{
+    if(apolloKey){
+      const ap = await fetchApollo(name, apolloKey);
+      if(ap){
+        data._sources.push('Apollo.io');
+        ['hr_contact','hr_title','hr_email','website','industry','employees','country'].forEach(k=>{ if(ap[k]&&!data[k]) data[k]=ap[k]; });
+        if(ap._apolloPeople) data._apolloPeople=ap._apolloPeople;
+      }
+    }
+  }catch(e){ console.warn('Apollo:',e); }
+
+  // 5. Claude AI — fills any remaining empty fields
+  try{
+    const aiData = await fetchClaudeAI(name, data);
+    if(aiData){
+      data._aiConfidence = aiData._aiConfidence || 'medium';
+      let aiFilledAny = false;
+      [...FIELDS.map(f=>f.key), 'hr_contact','hr_email','hr_title'].forEach(k=>{
+        if(aiData[k] && !data[k]){
+          data[k] = aiData[k];
+          if(!data._aiFields) data._aiFields=[];
+          data._aiFields.push(k);
+          aiFilledAny = true;
+        }
+      });
+      if(aiFilledAny) data._sources.push('Claude AI');
+    }
+  }catch(e){ console.warn('Claude AI:',e); }
+
+  data._logo=getLogoUrl(data.website);
+  return data;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  ENRICHMENT LOOP — runs one company at a time, shows progress
+// ═══════════════════════════════════════════════════════════════
+async function startEnrich(){
+  const selFields=FIELDS.filter(f=>f.on);
+  if(!selFields.length){ alert('Select at least one field.'); return; }
+
+  results=companies.map(c=>({company:c,status:'loading'}));
+  document.getElementById('pFields').style.display='none';
+  document.getElementById('pProg').style.display='block';
+  document.getElementById('pResults').style.display='block';
+  setStep(3); renderResults();
+
+  let done=0,errs=0;
+  for(let i=0;i<companies.length;i++){
+    document.getElementById('pFill').style.width=Math.round(i/companies.length*100)+'%';
+    document.getElementById('pLabel').textContent=`Fetching "${companies[i]}"… (${i+1} of ${companies.length})`;
+    updStats(done,companies.length-done-errs-1,errs);
+    try{
+      const info=await enrichCompany(companies[i]);
+      results[i]={...info,status:'done'};
+      done++;
+    }catch(e){
+      results[i]={company:companies[i],status:'error',errMsg:e.message};
+      errs++;
+    }
+    renderResults();
+    await new Promise(r=>setTimeout(r,300)); // small pause between companies
+  }
+  document.getElementById('pFill').style.width='100%';
+  document.getElementById('pLabel').textContent=`Done — ${done} enriched, ${errs} failed`;
+  updStats(done,0,errs);
+  document.getElementById('resTitle').textContent=`${companies.length} compan${companies.length===1?'y':'ies'} enriched`;
+  setStep(4);
+}
+function updStats(d,l,e){
+  document.getElementById('pStats').innerHTML=
+    (d?`<span class="spill sp-g">✓ ${d} done</span>`:'')+
+    (l?`<span class="spill sp-a">⏳ ${l} left</span>`:'')+
+    (e?`<span class="spill sp-r">✗ ${e} failed</span>`:'');
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  RENDER RESULT CARDS
+// ═══════════════════════════════════════════════════════════════
+function renderResults(filter=''){
+  const grid=document.getElementById('rGrid');
+  const list=results.filter(r=>!filter||r.company.toLowerCase().includes(filter.toLowerCase()));
+  if(!list.length){ grid.innerHTML='<div class="empty"><span class="ei">🔎</span>No results match</div>'; return; }
+  grid.innerHTML=list.map(r=>cardHtml(r)).join('');
+  grid.querySelectorAll('img.logo-img').forEach(img=>{
+    img.onerror=()=>{img.style.display='none';const fb=img.nextElementSibling;if(fb)fb.style.display='flex';};
+  });
+}
+function doFilter(){ renderResults(document.getElementById('srch').value); }
+
+function cardHtml(r){
+  const init=r.company.split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase();
+  const avatarHtml=r._logo
+    ?`<div class="avatar"><img src="${esc(r._logo)}" class="logo-img" alt=""><div style="display:none;width:100%;height:100%;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:var(--text2);">${init}</div></div>`
+    :`<div class="avatar">${init}</div>`;
+  const aiFields = r._aiFields || [];
+
+  if(r.status==='loading') return `
+    <div class="rcard"><div class="rcard-hdr"><div class="rcard-left">${avatarHtml}
+      <div><div class="rcard-name">${esc(r.company)}</div>
+      <div class="rcard-sub">Querying Wikidata · DuckDuckGo · Wikipedia…</div></div>
+    </div><span class="badge b-ld">⏳ Enriching</span></div>
+    <div class="flds">${[1,2,3,4].map(()=>`<div class="fld"><div style="flex:1">
+      <span class="skel" style="width:50%;height:11px;margin-bottom:5px;"></span>
+      <span class="skel" style="width:75%;"></span></div></div>`).join('')}</div></div>`;
+
+  if(r.status==='error') return `
+    <div class="rcard"><div class="rcard-hdr"><div class="rcard-left">
+      <div class="avatar" style="background:var(--red-bg);color:var(--red-tx);">${init}</div>
+      <div><div class="rcard-name">${esc(r.company)}</div>
+      <div class="rcard-sub" style="color:var(--red-tx);">${esc(r.errMsg||'Failed')}</div></div>
+    </div><span class="badge b-err">✗ Failed</span></div></div>`;
+
+  const selF=FIELDS.filter(f=>f.on);
+  const fieldsHtml=selF.map(f=>{
+    const v=r[f.key];
+    const isAI = aiFields.includes(f.key);
+    const aiTag = isAI ? '<span class="ai-note">AI</span>' : '';
+    let disp;
+    if(!v){
+      disp=`<span class="fld-na">Not found</span>`;
+    } else if(f.key==='website'){
+      disp=`<span class="fld-val"><a href="${esc(v)}" target="_blank" rel="noopener">${esc(v)}</a>${aiTag}</span>`;
+    } else if(f.key==='csr'){
+      disp=`<span class="fld-val" style="font-size:12px;">${esc(v)}${aiTag}</span>`;
+    } else {
+      disp=`<span class="fld-val">${esc(v)}${aiTag}</span>`;
+    }
+    return `<div class="fld"><span class="fld-ico">${f.ico}</span><div><span class="fld-lbl">${f.label}</span>${disp}</div></div>`;
+  }).join('');
+
+  // Apollo HR contacts panel
+  let apolloHtml='';
+  if(r._apolloPeople?.length){
+    apolloHtml=`<div style="margin-top:12px;padding-top:12px;border-top:0.5px solid var(--border);">
+      <div style="font-size:11px;font-weight:600;color:var(--gold-tx);margin-bottom:8px;">🟡 Apollo HR Contacts</div>
+      ${r._apolloPeople.slice(0,3).map(p=>`
+        <div style="font-size:12px;margin-bottom:5px;padding:6px 10px;background:var(--gold-bg);border-radius:var(--r-md);">
+          <strong>${esc(p.name||'—')}</strong> · ${esc(p.title||'—')}
+          ${p.email?`· <a href="mailto:${esc(p.email)}" style="color:var(--blue-tx);">${esc(p.email)}</a>`:''}
+          ${p.linkedin?`· <a href="${esc(p.linkedin)}" target="_blank" style="color:var(--blue-tx);">LinkedIn ↗</a>`:''}
+        </div>`).join('')}
+    </div>`;
+  }
+
+  const statusBadge=r._companyStatus?`<span style="font-size:11px;background:var(--green-bg);color:var(--green-tx);padding:2px 7px;border-radius:99px;margin-left:6px;">${esc(r._companyStatus)}</span>`:'';
+  const srcLine=r._sources?.length?`<div class="src-info">📡 Sources: ${r._sources.join(' · ')}${r._ocUrl?` · <a href="${esc(r._ocUrl)}" target="_blank" style="color:var(--blue-tx);">OpenCorporates ↗</a>`:''}</div>`:'';
+  const hasAI     = r._sources?.includes('Claude AI');
+  const hasApollo = r._sources?.includes('Apollo.io');
+  const mainBadge = hasApollo
+    ? `<span class="badge b-apollo">🟡 Apollo + ${hasAI?'AI':'done'}</span>`
+    : hasAI
+      ? `<span class="badge b-ai">🟣 AI-filled</span>`
+      : `<span class="badge b-ok">✓ Done</span>`;
+
+  return `
+    <div class="rcard"><div class="rcard-hdr">
+      <div class="rcard-left">${avatarHtml}
+        <div><div class="rcard-name">${esc(r.company)}${statusBadge}</div>
+        <div class="rcard-sub">${[r.industry,r.country].filter(Boolean).map(esc).join(' · ')||'&nbsp;'}</div></div>
+      </div>
+      ${mainBadge}
+    </div>
+    <div class="flds">${fieldsHtml}</div>${apolloHtml}${srcLine}</div>`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  EXPORT
+// ═══════════════════════════════════════════════════════════════
+function expXLSX(){
+  const selF=FIELDS.filter(f=>f.on);
+  const hdrs=['Company',...selF.map(f=>f.label),'CIN','Status','Sources','AI Filled Fields'];
+  const rows=results.filter(r=>r.status==='done').map(r=>[
+    r.company,...selF.map(f=>r[f.key]||''),
+    r.cin||'',r._companyStatus||'',(r._sources||[]).join('; '),(r._aiFields||[]).join('; ')
+  ]);
+  const ws=XLSX.utils.aoa_to_sheet([hdrs,...rows]);
+  const colWidths=hdrs.map((h,ci)=>{const mx=Math.max(h.length,...rows.map(r=>String(r[ci]||'').length));return{wch:Math.min(mx+2,50)};});
+  ws['!cols']=colWidths;
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Companies');
+  XLSX.writeFile(wb,'company_contacts.xlsx');
+}
+function expCSV(){
+  const selF=FIELDS.filter(f=>f.on);
+  const hdrs=['Company',...selF.map(f=>f.label),'CIN','Status','Sources','AI Filled Fields'];
+  const rows=results.filter(r=>r.status==='done').map(r=>[
+    r.company,...selF.map(f=>r[f.key]||''),
+    r.cin||'',r._companyStatus||'',(r._sources||[]).join('; '),(r._aiFields||[]).join('; ')
+  ].map(v=>`"${String(v).replace(/"/g,'""')}"`).join(','));
+  dlFile([hdrs.map(h=>`"${h}"`).join(','),...rows].join('\n'),'company_contacts.csv','text/csv');
+}
+function expJSON(){
+  dlFile(JSON.stringify(results.filter(r=>r.status==='done'),null,2),'company_contacts.json','application/json');
+}
+function dlFile(content,name,type){
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([content],{type}));
+  a.download=name; a.click();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  UTILS
+// ═══════════════════════════════════════════════════════════════
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function escA(s){ return String(s||'').replace(/'/g,"\\'"); }
+
+</script>
+</body>
+</html>
