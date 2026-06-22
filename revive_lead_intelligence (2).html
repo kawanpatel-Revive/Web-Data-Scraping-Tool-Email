@@ -1,0 +1,1315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Revive Lead Intelligence</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --green-50: #EAF3DE; --green-100: #C0DD97; --green-200: #97C459;
+    --green-400: #639922; --green-600: #3B6D11; --green-800: #27500A; --green-900: #173404;
+    --teal-50: #E1F5EE; --teal-100: #9FE1CB; --teal-200: #5DCAA5;
+    --teal-400: #1D9E75; --teal-600: #0F6E56; --teal-800: #085041; --teal-900: #04342C;
+    --amber-50: #FAEEDA; --amber-100: #FAC775; --amber-200: #EF9F27;
+    --amber-400: #BA7517; --amber-600: #854F0B; --amber-800: #633806;
+    --gray-50: #F1EFE8; --gray-100: #D3D1C7; --gray-200: #B4B2A9;
+    --gray-400: #888780; --gray-600: #5F5E5A; --gray-800: #444441; --gray-900: #2C2C2A;
+    --blue-50: #E6F1FB; --blue-100: #B5D4F4; --blue-400: #378ADD; --blue-800: #0C447C;
+    --red-50: #FCEBEB; --red-100: #F7C1C1; --red-400: #E24B4A; --red-800: #791F1F;
+    --surface: #ffffff;
+    --surface-2: #f8f9f7;
+    --surface-3: #f2f4f0;
+    --border: rgba(0,0,0,0.1);
+    --text: #1a1a18;
+    --text-2: #5f5e5a;
+    --text-3: #888780;
+    --radius: 10px;
+    --radius-lg: 14px;
+    --sidebar-width: 220px;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--surface-3);
+    color: var(--text);
+    display: flex;
+    min-height: 100vh;
+    font-size: 14px;
+  }
+
+  /* SIDEBAR */
+  .sidebar {
+    width: var(--sidebar-width);
+    background: var(--green-900);
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    z-index: 100;
+  }
+  .sidebar-logo {
+    padding: 20px 18px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+  .sidebar-logo .brand { font-size: 15px; font-weight: 600; color: var(--green-100); letter-spacing: -0.2px; }
+  .sidebar-logo .sub { font-size: 11px; color: var(--green-200); margin-top: 2px; opacity: 0.7; }
+  .nav { padding: 12px 0; flex: 1; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 18px; cursor: pointer;
+    font-size: 13px; color: rgba(255,255,255,0.6);
+    border-left: 2px solid transparent;
+    transition: all 0.15s;
+  }
+  .nav-item:hover { background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.9); }
+  .nav-item.active { background: rgba(255,255,255,0.1); color: #fff; border-left-color: var(--green-200); }
+  .nav-item .icon { font-size: 16px; width: 20px; text-align: center; }
+  .nav-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; color: rgba(255,255,255,0.3); padding: 14px 18px 4px; }
+
+  /* MAIN */
+  .main { margin-left: var(--sidebar-width); flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+
+  .topbar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 28px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 50;
+  }
+  .topbar-title { font-size: 16px; font-weight: 600; color: var(--text); }
+  .topbar-sub { font-size: 12px; color: var(--text-3); margin-top: 1px; }
+  .badge { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; }
+  .badge-green { background: var(--green-50); color: var(--green-800); }
+  .badge-amber { background: var(--amber-50); color: var(--amber-600); }
+  .badge-blue { background: var(--blue-50); color: var(--blue-800); }
+  .badge-red { background: var(--red-50); color: var(--red-800); }
+  .badge-gray { background: var(--gray-50); color: var(--gray-800); }
+
+  .content { padding: 24px 28px; flex: 1; }
+
+  /* CARDS */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 20px 22px;
+    margin-bottom: 20px;
+  }
+  .card-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+  .card-sub { font-size: 12px; color: var(--text-3); }
+
+  /* STATS ROW */
+  .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+  }
+  .stat-label { font-size: 11px; color: var(--text-3); font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+  .stat-value { font-size: 26px; font-weight: 600; color: var(--text); line-height: 1; }
+  .stat-sub { font-size: 11px; color: var(--text-3); margin-top: 4px; }
+
+  /* UPLOAD ZONE */
+  .upload-zone {
+    border: 1.5px dashed var(--green-200);
+    border-radius: var(--radius-lg);
+    padding: 40px 24px;
+    text-align: center;
+    background: var(--green-50);
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-bottom: 16px;
+  }
+  .upload-zone:hover { border-color: var(--green-400); background: #e0efd0; }
+  .upload-zone .upload-icon { font-size: 36px; color: var(--green-400); margin-bottom: 10px; display: block; }
+  .upload-zone .upload-title { font-size: 15px; font-weight: 600; color: var(--green-800); margin-bottom: 4px; }
+  .upload-zone .upload-hint { font-size: 12px; color: var(--green-600); }
+  #file-input { display: none; }
+
+  /* TABLE */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th {
+    text-align: left; padding: 9px 12px;
+    background: var(--surface-2);
+    border-bottom: 1px solid var(--border);
+    color: var(--text-2); font-weight: 600;
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;
+    white-space: nowrap;
+  }
+  tbody td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover { background: var(--surface-2); }
+
+  /* BUTTONS */
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 16px; border-radius: var(--radius);
+    font-size: 13px; font-weight: 500; cursor: pointer;
+    border: 1px solid var(--border); background: var(--surface);
+    color: var(--text); transition: all 0.15s;
+  }
+  .btn:hover { background: var(--surface-2); }
+  .btn-primary { background: var(--green-600); color: #fff; border-color: var(--green-600); }
+  .btn-primary:hover { background: var(--green-800); border-color: var(--green-800); }
+  .btn-sm { padding: 5px 10px; font-size: 12px; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* PROGRESS */
+  .progress-bar-wrap { background: var(--surface-3); border-radius: 20px; height: 6px; overflow: hidden; margin: 8px 0; }
+  .progress-bar { height: 100%; border-radius: 20px; background: var(--green-400); transition: width 0.3s; }
+
+  /* CLASSIFY PANEL */
+  .classify-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .filter-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 16px; }
+  .filter-row select, .filter-row input {
+    padding: 7px 11px; border-radius: var(--radius); border: 1px solid var(--border);
+    background: var(--surface); color: var(--text); font-size: 13px;
+  }
+  .filter-row select:focus, .filter-row input:focus { outline: 2px solid var(--green-200); border-color: var(--green-400); }
+
+  /* AI LOG */
+  .ai-log {
+    background: var(--gray-900);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    color: var(--green-100);
+    max-height: 200px;
+    overflow-y: auto;
+    margin-top: 12px;
+  }
+  .ai-log .log-line { margin-bottom: 3px; line-height: 1.5; }
+  .ai-log .log-ok { color: var(--green-200); }
+  .ai-log .log-warn { color: var(--amber-200); }
+  .ai-log .log-err { color: #F09595; }
+
+  /* SERVICE TAGS */
+  .service-tag {
+    display: inline-block; padding: 2px 8px; border-radius: 20px;
+    font-size: 11px; font-weight: 500;
+    background: var(--teal-50); color: var(--teal-800);
+    margin: 2px;
+  }
+
+  /* TABS */
+  .tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
+  .tab {
+    padding: 9px 16px; font-size: 13px; font-weight: 500;
+    color: var(--text-3); cursor: pointer; border-bottom: 2px solid transparent;
+    margin-bottom: -1px; transition: all 0.15s;
+  }
+  .tab.active { color: var(--green-600); border-bottom-color: var(--green-600); }
+  .tab:hover:not(.active) { color: var(--text); }
+
+  /* CAMPAIGN */
+  .campaign-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 18px 20px;
+    margin-bottom: 12px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .campaign-meta { font-size: 11px; color: var(--text-3); margin-top: 3px; }
+
+  /* MODAL */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+    display: none; align-items: center; justify-content: center; z-index: 200;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface); border-radius: var(--radius-lg);
+    padding: 24px; width: 480px; max-width: 95vw;
+    border: 1px solid var(--border);
+  }
+  .modal-title { font-size: 16px; font-weight: 600; margin-bottom: 16px; }
+  .form-row { margin-bottom: 14px; }
+  .form-label { font-size: 12px; font-weight: 500; color: var(--text-2); margin-bottom: 5px; display: block; }
+  .form-input {
+    width: 100%; padding: 8px 12px; border-radius: var(--radius);
+    border: 1px solid var(--border); font-size: 13px;
+    background: var(--surface); color: var(--text);
+  }
+  .form-input:focus { outline: 2px solid var(--green-200); border-color: var(--green-400); }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; }
+
+  /* PAGES */
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* CONFIDENCE CIRCLE */
+  .conf-circle {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 38px; height: 38px; border-radius: 50%;
+    font-size: 11px; font-weight: 700;
+  }
+  .conf-high { background: var(--green-50); color: var(--green-800); }
+  .conf-mid { background: var(--amber-50); color: var(--amber-600); }
+  .conf-low { background: var(--red-50); color: var(--red-800); }
+
+  /* EMPTY STATE */
+  .empty-state { text-align: center; padding: 60px 24px; color: var(--text-3); }
+  .empty-state .empty-icon { font-size: 40px; margin-bottom: 12px; opacity: 0.4; }
+  .empty-state p { font-size: 14px; }
+
+  /* SPINNER */
+  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--green-200); border-top-color: var(--green-600); border-radius: 50%; animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* TOAST */
+  .toast-wrap { position: fixed; bottom: 24px; right: 24px; display: flex; flex-direction: column; gap: 8px; z-index: 999; }
+  .toast {
+    background: var(--gray-900); color: #fff;
+    padding: 10px 16px; border-radius: var(--radius);
+    font-size: 13px; animation: fadeUp 0.2s ease;
+  }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+  .mt-12 { margin-top: 12px; }
+  .flex { display: flex; }
+  .gap-10 { gap: 10px; }
+  .align-center { align-items: center; }
+  .justify-between { justify-content: space-between; }
+  .text-muted { color: var(--text-3); font-size: 12px; }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <div class="brand">🌿 Revive</div>
+    <div class="sub">Lead Intelligence</div>
+  </div>
+  <div class="nav">
+    <div class="nav-label">Main</div>
+    <div class="nav-item active" onclick="showPage('dashboard')">
+      <span class="icon">📊</span> Dashboard
+    </div>
+    <div class="nav-item" onclick="showPage('upload')">
+      <span class="icon">📂</span> Upload Data
+    </div>
+    <div class="nav-item" onclick="showPage('classify')">
+      <span class="icon">🤖</span> AI Classify
+    </div>
+    <div class="nav-item" onclick="showPage('database')">
+      <span class="icon">🗄️</span> Database
+    </div>
+    <div class="nav-label">Outreach</div>
+    <div class="nav-item" onclick="showPage('campaigns')">
+      <span class="icon">📧</span> Campaigns
+    </div>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- TOPBAR -->
+  <div class="topbar" id="topbar">
+    <div>
+      <div class="topbar-title" id="topbar-title">Dashboard</div>
+      <div class="topbar-sub" id="topbar-sub">Overview of your lead intelligence system</div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <span class="badge badge-green" id="total-badge">0 companies</span>
+      <button class="btn btn-primary btn-sm" onclick="showPage('upload')">+ Upload Data</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- DASHBOARD PAGE -->
+    <div class="page active" id="page-dashboard">
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="stat-label">Total Companies</div>
+          <div class="stat-value" id="stat-total">0</div>
+          <div class="stat-sub">across all cities</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Classified</div>
+          <div class="stat-value" id="stat-classified">0</div>
+          <div class="stat-sub" id="stat-classified-pct">0% of total</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">High Confidence</div>
+          <div class="stat-value" id="stat-high">0</div>
+          <div class="stat-sub">≥90% auto-approved</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Need Review</div>
+          <div class="stat-value" id="stat-review">0</div>
+          <div class="stat-sub" style="color:var(--amber-400);">below 70% confidence</div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div class="card">
+          <div class="card-title">Industry Breakdown</div>
+          <div class="card-sub">Top industries in your database</div>
+          <div id="industry-chart" style="margin-top:16px;">
+            <div class="empty-state"><div class="empty-icon">📊</div><p>Upload data to see breakdown</p></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Service Opportunities</div>
+          <div class="card-sub">Most tagged Revive services</div>
+          <div id="service-chart" style="margin-top:16px;">
+            <div class="empty-state"><div class="empty-icon">🌱</div><p>Classify companies to see opportunities</p></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:0;">
+        <div class="card-title">Recent Activity</div>
+        <div id="recent-activity">
+          <div class="empty-state"><div class="empty-icon">🕐</div><p>No activity yet. Start by uploading your Excel files.</p></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- UPLOAD PAGE -->
+    <div class="page" id="page-upload">
+      <div class="card">
+        <div class="card-title">Upload Company Excel Files</div>
+        <div class="card-sub" style="margin-bottom:20px;">Upload your GIDC city Excel files (.xlsx or .csv). Each file will be merged into the master database.</div>
+        <div style="background:var(--blue-50);border:1px solid var(--blue-100);border-radius:var(--radius);padding:12px 16px;margin-bottom:16px;font-size:12px;color:var(--blue-800);">
+          💡 <strong>Tip:</strong> If companies were imported incorrectly before, click <strong>"Clear All Data"</strong> below to start fresh, then re-upload.
+          <button class="btn btn-sm" style="margin-left:10px;border-color:var(--red-400);color:var(--red-800);" onclick="clearAllData()">🗑 Clear All Data</button>
+        </div>
+
+        <div class="upload-zone" onclick="document.getElementById('file-input').click()" id="upload-zone">
+          <span class="upload-icon">📤</span>
+          <div class="upload-title">Drop your Excel files here</div>
+          <div class="upload-hint">Supports .xlsx and .csv — multiple files at once</div>
+        </div>
+        <input type="file" id="file-input" multiple accept=".xlsx,.csv" onchange="handleFiles(event)">
+
+        <div id="upload-preview" style="display:none;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+            <div class="card-title">Preview — Column Mapping</div>
+            <button class="btn btn-primary btn-sm" onclick="importData()">Import to Database</button>
+          </div>
+          <div id="column-mapper"></div>
+          <div class="table-wrap" style="margin-top:16px;">
+            <table id="preview-table"></table>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" id="uploaded-files-card" style="display:none;">
+        <div class="card-title">Uploaded Files</div>
+        <div id="uploaded-files-list"></div>
+      </div>
+    </div>
+
+    <!-- CLASSIFY PAGE -->
+    <div class="page" id="page-classify">
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <div>
+            <div class="card-title">AI Industry Classification</div>
+            <div class="card-sub">Powered by Claude — classifies each company by name and data</div>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-sm" onclick="classifySelected()" id="btn-classify-sel">Classify Selected</button>
+            <button class="btn btn-primary btn-sm" onclick="classifyAll()" id="btn-classify-all">▶ Classify All Unclassified</button>
+          </div>
+        </div>
+
+        <div id="classify-progress" style="display:none;margin-bottom:12px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+            <span class="text-muted" id="classify-status">Classifying...</span>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span class="text-muted" id="classify-count">0 / 0</span>
+              <button class="btn btn-sm" id="btn-stop" onclick="stopClassify()" style="border-color:var(--red-400);color:var(--red-800);display:none;">⏹ Stop</button>
+            </div>
+          </div>
+          <div class="progress-bar-wrap"><div class="progress-bar" id="classify-bar" style="width:0%"></div></div>
+          <div class="ai-log" id="ai-log"></div>
+        </div>
+
+        <div class="filter-row">
+          <input type="text" placeholder="Search companies..." id="classify-search" oninput="renderClassifyTable()" style="flex:1;min-width:160px;">
+          <select id="classify-filter-status" onchange="renderClassifyTable()">
+            <option value="">All status</option>
+            <option value="classified">Classified</option>
+            <option value="unclassified">Unclassified</option>
+            <option value="review">Needs Review</option>
+          </select>
+          <select id="classify-filter-city" onchange="renderClassifyTable()">
+            <option value="">All cities</option>
+          </select>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th><input type="checkbox" id="sel-all" onchange="toggleSelectAll(this)"></th>
+                <th>Company Name</th>
+                <th>City / GIDC</th>
+                <th>Industry</th>
+                <th>Confidence</th>
+                <th>Services Tagged</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="classify-tbody"></tbody>
+          </table>
+        </div>
+        <div id="classify-empty" class="empty-state"><div class="empty-icon">🤖</div><p>Upload company data first to classify</p></div>
+      </div>
+    </div>
+
+    <!-- DATABASE PAGE -->
+    <div class="page" id="page-database">
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+          <div>
+            <div class="card-title">Master Company Database</div>
+            <div class="card-sub">All companies with full classification and service tags</div>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-sm" onclick="exportDB()">⬇ Export Excel</button>
+            <button class="btn btn-primary btn-sm" onclick="showModal('add-modal')">+ Add Company</button>
+          </div>
+        </div>
+
+        <div class="filter-row">
+          <input type="text" placeholder="Search..." id="db-search" oninput="renderDBTable()" style="flex:1;min-width:160px;">
+          <select id="db-filter-industry" onchange="renderDBTable()">
+            <option value="">All industries</option>
+          </select>
+          <select id="db-filter-city" onchange="renderDBTable()">
+            <option value="">All cities</option>
+          </select>
+          <select id="db-filter-customer" onchange="renderDBTable()">
+            <option value="">All leads</option>
+            <option value="Y">Existing customers</option>
+            <option value="N">New leads</option>
+          </select>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Company Name</th>
+                <th>GIDC / City</th>
+                <th>Industry</th>
+                <th>Contact</th>
+                <th>Email</th>
+                <th>Services</th>
+                <th>Customer</th>
+                <th>Lead Score</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="db-tbody"></tbody>
+          </table>
+        </div>
+        <div id="db-empty" class="empty-state"><div class="empty-icon">🗄️</div><p>No companies yet. Upload Excel files to get started.</p></div>
+      </div>
+    </div>
+
+    <!-- CAMPAIGNS PAGE -->
+    <div class="page" id="page-campaigns">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+        <div>
+          <div style="font-size:15px;font-weight:600;">Email Campaigns</div>
+          <div class="text-muted">Segment your database and track targeted outreach</div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="showModal('campaign-modal')">+ New Campaign</button>
+      </div>
+
+      <div class="tabs">
+        <div class="tab active" onclick="switchCampaignTab('active',this)">Active</div>
+        <div class="tab" onclick="switchCampaignTab('completed',this)">Completed</div>
+        <div class="tab" onclick="switchCampaignTab('draft',this)">Drafts</div>
+      </div>
+
+      <div id="campaigns-list">
+        <div class="empty-state"><div class="empty-icon">📧</div><p>No campaigns yet. Create your first campaign to start outreach.</p></div>
+      </div>
+
+      <div class="card" style="margin-top:20px;">
+        <div class="card-title">Segment Builder</div>
+        <div class="card-sub" style="margin-bottom:14px;">Build a targeted list from your classified database</div>
+        <div class="filter-row">
+          <select id="seg-industry">
+            <option value="">Any industry</option>
+          </select>
+          <select id="seg-service">
+            <option value="">Any service need</option>
+            <option value="Solar EPC">Solar EPC</option>
+            <option value="Energy Audit">Energy Audit</option>
+            <option value="Rainwater Harvesting">Rainwater Harvesting</option>
+            <option value="Water Audit">Water Audit</option>
+            <option value="ETP Optimization">ETP Optimization</option>
+            <option value="ZLD Feasibility">ZLD Feasibility</option>
+            <option value="ESG Reporting">ESG Reporting</option>
+            <option value="Carbon Credits">Carbon Credits</option>
+          </select>
+          <select id="seg-customer">
+            <option value="">Any type</option>
+            <option value="N">New leads only</option>
+            <option value="Y">Existing customers</option>
+          </select>
+          <button class="btn btn-primary btn-sm" onclick="buildSegment()">Build Segment</button>
+        </div>
+        <div id="segment-result"></div>
+      </div>
+    </div>
+
+  </div><!-- end content -->
+</div><!-- end main -->
+
+<!-- ADD COMPANY MODAL -->
+<div class="modal-overlay" id="add-modal">
+  <div class="modal">
+    <div class="modal-title">Add Company Manually</div>
+    <div class="form-row">
+      <label class="form-label">Company Name *</label>
+      <input type="text" class="form-input" id="add-name" placeholder="e.g. Shree Ram Chemicals Pvt Ltd">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div class="form-row">
+        <label class="form-label">GIDC / Area</label>
+        <input type="text" class="form-input" id="add-gidc" placeholder="e.g. Ankleshwar GIDC">
+      </div>
+      <div class="form-row">
+        <label class="form-label">City / District</label>
+        <input type="text" class="form-input" id="add-city" placeholder="e.g. Bharuch">
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div class="form-row">
+        <label class="form-label">Email</label>
+        <input type="email" class="form-input" id="add-email" placeholder="contact@company.com">
+      </div>
+      <div class="form-row">
+        <label class="form-label">Phone</label>
+        <input type="text" class="form-input" id="add-phone" placeholder="+91 98765 43210">
+      </div>
+    </div>
+    <div class="form-row">
+      <label class="form-label">Website</label>
+      <input type="text" class="form-input" id="add-website" placeholder="www.company.com">
+    </div>
+    <div class="form-row">
+      <label class="form-label">Existing Customer?</label>
+      <select class="form-input" id="add-customer">
+        <option value="N">No — New Lead</option>
+        <option value="Y">Yes — Existing Customer</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-sm" onclick="hideModal('add-modal')">Cancel</button>
+      <button class="btn btn-primary btn-sm" onclick="addCompanyManual()">Add Company</button>
+    </div>
+  </div>
+</div>
+
+<!-- CAMPAIGN MODAL -->
+<div class="modal-overlay" id="campaign-modal">
+  <div class="modal">
+    <div class="modal-title">Create New Campaign</div>
+    <div class="form-row">
+      <label class="form-label">Campaign Name *</label>
+      <input type="text" class="form-input" id="camp-name" placeholder="e.g. Solar EPC — Chemical Sector Q3">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div class="form-row">
+        <label class="form-label">Target Industry</label>
+        <select class="form-input" id="camp-industry">
+          <option value="">All industries</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label class="form-label">Service Focus</label>
+        <select class="form-input" id="camp-service">
+          <option value="">All services</option>
+          <option>Solar EPC</option><option>Energy Audit</option><option>Rainwater Harvesting</option>
+          <option>ETP Optimization</option><option>ZLD Feasibility</option><option>ESG Reporting</option><option>Carbon Credits</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <label class="form-label">Email Subject Line</label>
+      <input type="text" class="form-input" id="camp-subject" placeholder="e.g. Reduce your energy costs by 30% — Free Audit">
+    </div>
+    <div class="form-row">
+      <label class="form-label">Scheduled Date</label>
+      <input type="date" class="form-input" id="camp-date">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-sm" onclick="hideModal('campaign-modal')">Cancel</button>
+      <button class="btn btn-primary btn-sm" onclick="createCampaign()">Create Campaign</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast-wrap" id="toast-wrap"></div>
+
+<script>
+// ===================== STATE =====================
+let DB = JSON.parse(localStorage.getItem('revive_db') || '[]');
+let campaigns = JSON.parse(localStorage.getItem('revive_campaigns') || '[]');
+let uploadedFiles = JSON.parse(localStorage.getItem('revive_files') || '[]');
+let rawUploadData = [];
+
+const INDUSTRY_CODES = {
+  'CHEM': 'Chemicals', 'PHAR': 'Pharmaceuticals', 'TEXT': 'Textile & Dyeing',
+  'PACK': 'Packaging', 'PLAS': 'Plastics', 'FOOD': 'Food Processing',
+  'BEV': 'Beverage', 'ENGG': 'Engineering', 'AUTO': 'Auto Components',
+  'METL': 'Metal Processing', 'FOUN': 'Foundry', 'CERA': 'Ceramics',
+  'GLAS': 'Glass', 'PAPER': 'Paper & Pulp', 'FMCG': 'FMCG Manufacturing',
+  'ELEC': 'Electrical / Electronics', 'RUBB': 'Rubber', 'CEMT': 'Cement',
+  'LOGI': 'Logistics & Warehousing', 'REAL': 'Real Estate', 'OTHR': 'Others'
+};
+
+const KEYWORD_MAP = {
+  'CHEM': ['chemical','chem','petro','solvent','acid','alkali','polymer','resin','pigment','dye stuff','colour','colorant','reagent','catalyst','adhesive','coating','paint','varnish','ink','lubric','grease','wax','paraffin','chlor','sulph','nitro','phosph','fluor','bromo','iodo','perox','carbide','silica','zeolite','surfactant','detergent raw','intermediate','fine chem','specialty chem','agrochem','pesticid','herbicid','insecticid','fungicid'],
+  'PHAR': ['pharma','pharmaceutical','drug','medicine','biotech','api','lifescience','life science','tablet','capsule','injection','syrup','ointment','bulk drug','active ingredient','formulation','nutraceutical','herbal','ayurved','biochem','diagnostics','lab reagent','hospital supply','medical device','surgical'],
+  'TEXT': ['textile','tex','dyeing','fabric','yarn','weav','knit','garment','apparel','colour','embroid','lace','saree','denim','cotton','polyester','nylon','silk','wool','jute','fiber','fibre','spinning','winding','sizing','bleach','printing','finishing','process house','hosiery','socks','towel','bedsheet','home textile'],
+  'PACK': ['packag','container','carton','wrapper','label','pouch','sachet','blister','laminate','flexibl','rigid pack','corrugat','box','bag','sack','drum','barrel','can','tin','jar','vial','ampoule','crate','pallet','tray'],
+  'PLAS': ['plastic','plas','hdpe','ldpe','lldpe','pp','pvc','pet','abs','nylon','acrylic','polycarbonate','polystyren','polyurethane','poly','mould','injection mould','blow mould','extrusion','compounding','masterbatch','pipe','fitting','sheet','film','foam','recycl'],
+  'FOOD': ['food','agro','agri','spice','flour','oil','rice','dairy','snack','biscuit','masala','pickle','sauce','jam','bakery','confection','chocolat','noodle','pasta','cereal','pulse','lentil','wheat','maize','soybean','groundnut','mustard','coconut','palm','sunflower','salt','sugar','honey','vinegar','ketchup','ready to eat','frozen','dehydrat','extruded'],
+  'BEV': ['beverage','drink','juice','soft drink','beer','liquor','alcohol','water','mineral water','aerated','carbonated','energy drink','tea','coffee','milk','shake'],
+  'ENGG': ['engineer','engg','machine','machinery','equipment','fabricat','pump','valve','tool','component','precision','jig','fixture','press','lathe','cnc','milling','grinding','welding','forging','casting component','heat exchanger','vessel','tank','reactor','agitator','conveyor','crane','hoist','compressor','blower','fan','filter','separator','dryer','boiler','furnace','oven','cooler','chiller','hydraulic','pneumatic','gear','shaft','coupling','bearing','spring','fastener','bolt','nut','screw'],
+  'AUTO': ['auto','vehicle','car','truck','motor','tyre','brake','gear','bearing','suspension','radiator','bumper','dashboard','seat','mirror','exhaust','muffler','clutch','axle','rim','wheel','lamp','horn','battery','alternator','starter','wiper','auto component','auto ancillary','two wheeler','three wheeler','commercial vehicle'],
+  'METL': ['metal','steel','iron','alumin','copper','zinc','brass','bronze','nickel','titanium','stainless','galvan','roll','wire','pipe','tube','rod','bar','angle','channel','beam','sheet','plate','coil','strip','structural steel','alloy','casting','forging','extrusion','drawing'],
+  'FOUN': ['foundry','casting','forging','die cast','sand cast','investment cast','lost wax','pattern','mould making','gray iron','ductile iron','malleable','non ferrous cast'],
+  'CERA': ['ceramic','tiles','sanitaryware','refractory','brick','kiln','pottery','stoneware','porcelain','chinaware','insulat','abrasive','alumina','zirconia','silicon carbide','fire clay','floor tile','wall tile','vitrified'],
+  'GLAS': ['glass','mirror','fibre glass','float glass','borosilicate','tempered glass','laminated glass','glass bottle','glass container','optical','lens'],
+  'PAPER': ['paper','pulp','cardboard','board','tissue','kraft','duplex','newsprint','writing paper','coated paper','specialty paper','stationery'],
+  'FMCG': ['fmcg','consumer','personal care','soap','detergent','shampoo','conditioner','toothpaste','toothbrush','razor','cream','lotion','perfume','deodorant','cleaning','housekeeping','phenyl','bleach','floor cleaner','dishwash','laundry','cosmetic','makeup','lipstick','nail polish','baby product'],
+  'ELEC': ['electric','electron','wire','cable','switch','circuit','led','solar','motor','transformer','capacitor','resistor','pcb','semiconductor','sensor','relay','contactor','mcb','mccb','panel','switchgear','ups','inverter','battery','charger','generator','alternator','lighting','luminaire','appliance','ac','refrigerator','washing machine','pump motor','control panel','automation','plc','scada','instrument','meter','transducer'],
+  'RUBB': ['rubber','gasket','seal','hose','o-ring','diaphragm','bellows','conveyor belt','rubber sheet','foam rubber','sponge','latex','silicone','viton','nitrile'],
+  'CEMT': ['cement','concrete','ready mix','rmc','fly ash brick','aac block','autoclaved','mortar','grout','plaster','gypsum','lime','calcium silicate','construction chemical'],
+  'LOGI': ['logistic','transport','warehouse','freight','courier','cargo','supply chain','shipping','forwarding','clearing','customs','cold storage','distribution','fleet','tanker'],
+  'REAL': ['real estate','developer','construction','builder','infrastructure','housing','township','colony','apartment','commercial complex','mall','office park','industrial park','sez']
+};
+
+const SERVICE_MAP = {
+  'CHEM': ['Solar EPC','Energy Audit','ETP Optimization','Wastewater Reuse','ZLD Feasibility','Carbon Footprint Assessment','Carbon Credits'],
+  'PHAR': ['Solar EPC','Energy Audit','ETP Optimization','Water Audit','Sustainability Reporting','ESG Reporting','Carbon Credits'],
+  'TEXT': ['Solar EPC','ETP Optimization','Wastewater Reuse','ZLD Feasibility','Water Audit','Energy Efficiency'],
+  'PACK': ['Solar EPC','Energy Audit','Energy Efficiency','Carbon Footprint Assessment'],
+  'PLAS': ['Solar EPC','Energy Audit','Energy Efficiency','Carbon Footprint Assessment'],
+  'FOOD': ['Solar EPC','Rainwater Harvesting','Water Audit','Energy Audit','Sustainability Reporting'],
+  'BEV': ['Solar EPC','Rainwater Harvesting','Water Audit','Energy Audit','Wastewater Reuse'],
+  'ENGG': ['Solar EPC','Energy Audit','Energy Efficiency'],
+  'AUTO': ['Solar EPC','Energy Audit','Carbon Footprint Assessment','ESG Reporting'],
+  'METL': ['Solar EPC','Energy Audit','Energy Efficiency','Carbon Credits'],
+  'FOUN': ['Solar EPC','Energy Audit','Energy Efficiency'],
+  'CERA': ['Solar EPC','Energy Audit','Energy Efficiency'],
+  'GLAS': ['Solar EPC','Energy Audit','Energy Efficiency'],
+  'PAPER': ['Solar EPC','Energy Audit','Water Audit','Wastewater Reuse','ETP Optimization'],
+  'FMCG': ['Solar EPC','Energy Audit','Sustainability Reporting','ESG Reporting','Carbon Credits'],
+  'ELEC': ['Solar EPC','Energy Audit','Energy Efficiency'],
+  'RUBB': ['Solar EPC','Energy Audit','ETP Optimization'],
+  'CEMT': ['Solar EPC','Energy Audit','Carbon Footprint Assessment','Carbon Credits'],
+  'LOGI': ['Solar EPC','Energy Audit','Carbon Footprint Assessment'],
+  'REAL': ['Solar EPC','Rainwater Harvesting','Green Building Consulting','Energy Audit'],
+  'OTHR': ['Solar EPC','Energy Audit']
+};
+
+function clearAllData() {
+  if (!confirm('This will delete ALL imported companies and classification data. Are you sure?')) return;
+  DB = []; campaigns = []; uploadedFiles = [];
+  localStorage.removeItem('revive_db'); localStorage.removeItem('revive_campaigns'); localStorage.removeItem('revive_files');
+  updateBadge(); renderDashboard();
+  document.getElementById('uploaded-files-card').style.display = 'none';
+  document.getElementById('upload-preview').style.display = 'none';
+  toast('🗑 All data cleared. Upload fresh files now.');
+}
+
+function saveDB() { localStorage.setItem('revive_db', JSON.stringify(DB)); localStorage.setItem('revive_campaigns', JSON.stringify(campaigns)); localStorage.setItem('revive_files', JSON.stringify(uploadedFiles)); }
+
+// ===================== NAV =====================
+const PAGE_META = {
+  'dashboard': { title: 'Dashboard', sub: 'Overview of your lead intelligence system' },
+  'upload': { title: 'Upload Data', sub: 'Import Excel files from your city databases' },
+  'classify': { title: 'AI Classify', sub: 'Auto-classify companies by industry using AI' },
+  'database': { title: 'Master Database', sub: 'All companies, classifications, and service tags' },
+  'campaigns': { title: 'Email Campaigns', sub: 'Segment and track your outreach campaigns' }
+};
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => { if (n.getAttribute('onclick') && n.getAttribute('onclick').includes(id)) n.classList.add('active'); });
+  const meta = PAGE_META[id] || {};
+  document.getElementById('topbar-title').textContent = meta.title || id;
+  document.getElementById('topbar-sub').textContent = meta.sub || '';
+  if (id === 'dashboard') renderDashboard();
+  if (id === 'classify') { renderClassifyTable(); refreshCityFilters(); }
+  if (id === 'database') { renderDBTable(); refreshDBFilters(); }
+  if (id === 'campaigns') { renderCampaigns(); refreshCampaignIndustries(); refreshSegIndustries(); }
+}
+
+// ===================== UPLOAD =====================
+function handleFiles(e) {
+  const files = Array.from(e.target.files);
+  if (!files.length) return;
+  rawUploadData = [];
+  files.forEach(f => readExcel(f));
+}
+
+function readExcel(file) {
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const wb = XLSX.read(ev.target.result, { type: 'array' });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
+    rawUploadData.push({ name: file.name, rows });
+    if (rawUploadData.length === document.getElementById('file-input').files.length) showPreview();
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function showPreview() {
+  if (!rawUploadData.length) return;
+  const allRows = rawUploadData.flatMap(f => f.rows);
+  const cols = Object.keys(allRows[0] || {});
+  document.getElementById('upload-preview').style.display = 'block';
+
+  // Detect best column for company name - show dropdown so user can confirm
+  const guessNameCol = cols.find(c => {
+    const cl = c.toLowerCase();
+    return (cl.includes('company') || cl === 'name' || cl.includes('firm') || cl.includes('organisation') || cl.includes('organization') || cl.includes('unit name') || cl.includes('factory'))
+      && !cl.includes('sr') && !cl.includes('no') && !cl.includes('serial');
+  }) || cols.find(c => !c.toLowerCase().includes('sr') && !c.toLowerCase().includes('no') && isNaN(Number(allRows[0]?.[c])));
+
+  const mapper = document.getElementById('column-mapper');
+  mapper.innerHTML = `
+    <div style="background:var(--amber-50);border:1px solid var(--amber-100);border-radius:var(--radius);padding:14px 16px;margin-bottom:14px;">
+      <div style="font-size:13px;font-weight:600;color:var(--amber-600);margin-bottom:8px;">⚠️ Tell us which column has Company Names</div>
+      <div style="font-size:12px;color:var(--amber-600);margin-bottom:10px;">Your Excel has ${cols.length} columns. Select the one that contains company names so we don't accidentally read serial numbers.</div>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <label style="font-size:13px;font-weight:500;">Company Name column:</label>
+        <select id="name-col-picker" style="padding:6px 10px;border-radius:8px;border:1px solid var(--border);font-size:13px;background:var(--surface);">
+          ${cols.map(c => `<option value="${c}" ${c===guessNameCol?'selected':''}>${c}</option>`).join('')}
+        </select>
+        <span style="font-size:12px;color:var(--amber-600);">Sample: <strong id="name-col-sample">${String(allRows[0]?.[guessNameCol]||'').slice(0,40)}</strong></span>
+      </div>
+    </div>
+    <div style="font-size:12px;color:var(--text-3);margin-bottom:8px;">All columns found: ${cols.map(c=>`<code style="background:var(--surface-2);padding:1px 5px;border-radius:4px;margin:1px;">${c}</code>`).join(' ')}</div>`;
+
+  document.getElementById('name-col-picker').addEventListener('change', function() {
+    document.getElementById('name-col-sample').textContent = String(allRows[0]?.[this.value]||'').slice(0,40);
+  });
+
+  // Preview table — all columns
+  const tbl = document.getElementById('preview-table');
+  tbl.innerHTML = `<thead><tr>${cols.slice(0,8).map(c => `<th>${c}</th>`).join('')}${cols.length>8?'<th>…</th>':''}</tr></thead><tbody>${allRows.slice(0,5).map(r => `<tr>${cols.slice(0,8).map(c => `<td>${String(r[c]||'').slice(0,28)}</td>`).join('')}${cols.length>8?'<td>…</td>':''}</tr>`).join('')}</tbody>`;
+}
+
+function importData() {
+  if (!rawUploadData.length) return;
+  // Get user-selected name column
+  const nameColPicker = document.getElementById('name-col-picker');
+  const selectedNameCol = nameColPicker ? nameColPicker.value : null;
+
+  let added = 0;
+  rawUploadData.forEach(file => {
+    file.rows.forEach(row => {
+      const cols = Object.keys(row);
+
+      // Smart get: tries exact match first, then partial, skips serial-number-like columns
+      const get = (...keys) => {
+        for (const k of keys) {
+          // Exact match (case-insensitive)
+          const exact = cols.find(c => c.toLowerCase() === k.toLowerCase());
+          if (exact) return String(row[exact]||'').trim();
+        }
+        for (const k of keys) {
+          // Partial match but skip sr/no/serial columns
+          const partial = cols.find(c => {
+            const cl = c.toLowerCase();
+            if (cl.includes('sr') || cl === 's.no' || cl === 'sr.no' || cl === 'serial' || cl === 'no.' || cl === '#') return false;
+            return cl.includes(k.toLowerCase());
+          });
+          if (partial) return String(row[partial]||'').trim();
+        }
+        return '';
+      };
+
+      // Use user-selected column for name, fallback to smart detection
+      let name = '';
+      if (selectedNameCol && row[selectedNameCol] !== undefined) {
+        name = String(row[selectedNameCol]||'').trim();
+      } else {
+        name = get('company name','company','firm name','firm','unit name','factory name','organisation','organization');
+      }
+
+      // Skip if name is empty or looks like a number (serial)
+      if (!name || !isNaN(Number(name))) return;
+      if (DB.some(d => d.name.toLowerCase() === name.toLowerCase())) return;
+
+      DB.push({
+        id: Date.now() + Math.random(),
+        name,
+        gidc: get('gidc','gidc name','area','zone'),
+        city: get('city','district','town','taluka'),
+        state: get('state') || 'Gujarat',
+        email: get('email','e-mail','mail id'),
+        phone: get('phone','mobile','contact no','tel','contact number','mob'),
+        website: get('website','web','url','site'),
+        contactPerson: get('contact person','person name','contact name','owner','proprietor'),
+        designation: get('designation','title','role','post'),
+        industryCode: '',
+        industryName: '',
+        subIndustry: '',
+        mainProducts: get('product','main product','goods','items'),
+        services: [],
+        confidence: 0,
+        existingCustomer: get('existing customer','customer','client') || 'N',
+        leadScore: '',
+        status: 'Unclassified',
+        notes: get('notes','remarks','comment','remark'),
+        source: file.name
+      });
+      added++;
+    });
+  });
+  saveDB();
+  document.getElementById('upload-preview').style.display = 'none';
+  const card = document.getElementById('uploaded-files-card');
+  card.style.display = 'block';
+  uploadedFiles = [...uploadedFiles, ...rawUploadData.map(f => ({ name: f.name, rows: f.rows.length, date: new Date().toLocaleDateString('en-IN') }))];
+  saveDB();
+  document.getElementById('uploaded-files-list').innerHTML = uploadedFiles.map(f => `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);"><span style="font-weight:500;">📄 ${f.name}</span><span class="text-muted">${f.rows} rows · ${f.date}</span></div>`).join('');
+  updateBadge();
+  toast(`✅ ${added} companies imported successfully`);
+  rawUploadData = [];
+}
+
+// ===================== CLASSIFY =====================
+function classifyByName(name) {
+  const n = name.toLowerCase();
+  // Try longest keyword match first for better accuracy
+  let bestMatch = null, bestLen = 0;
+  for (const [code, keywords] of Object.entries(KEYWORD_MAP)) {
+    for (const kw of keywords) {
+      if (n.includes(kw) && kw.length > bestLen) {
+        bestLen = kw.length;
+        bestMatch = { code, name: INDUSTRY_CODES[code], confidence: 75 + Math.min(20, kw.length * 2) };
+      }
+    }
+  }
+  if (bestMatch) return bestMatch;
+  return { code: 'OTHR', name: 'Others', confidence: 35 + Math.floor(Math.random() * 20) };
+}
+
+async function classifyWithAI(company) {
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1000,
+        system: `You are an industrial company classifier specializing in Indian GIDC (Gujarat Industrial Development Corporation) companies. Given a company name and optional details, classify it into exactly one industry code. Return ONLY a raw JSON object (no markdown, no explanation):
+{
+  "industryCode": one of [CHEM, PHAR, TEXT, PACK, PLAS, FOOD, BEV, ENGG, AUTO, METL, FOUN, CERA, GLAS, PAPER, FMCG, ELEC, RUBB, CEMT, LOGI, REAL, OTHR],
+  "industryName": full industry name,
+  "subIndustry": specific sub-type e.g. "Specialty Chemicals" or "Textile Dyeing",
+  "mainProducts": short comma-separated product list,
+  "confidence": integer 0-100
+}
+Rules: Use OTHR only if truly unclassifiable. Indian company names often have keywords like Chem, Pharma, Dye, Pack, Plast, Fab, Engg, Auto, Steel, Cast, Cerami, Paper, Foods, Elec, Rubb in them — use those clues. Generic names like "Shree Enterprises" with no clues = lower confidence.`,
+        messages: [{ role: 'user', content: `Company: ${company.name}\nCity: ${company.city || ''}\nKnown products: ${company.mainProducts || ''}` }]
+      })
+    });
+    const data = await res.json();
+    const text = data.content?.[0]?.text || '';
+    const clean = text.replace(/```json|```/g, '').trim();
+    return JSON.parse(clean);
+  } catch {
+    return classifyByName(company.name);
+  }
+}
+
+let classifyRunning = false;
+let stopRequested = false;
+
+function stopClassify() {
+  stopRequested = true;
+  document.getElementById('btn-stop').disabled = true;
+  document.getElementById('btn-stop').textContent = 'Stopping...';
+  document.getElementById('classify-status').textContent = 'Stopping after current company...';
+}
+
+async function classifyAll() {
+  const unclassified = DB.filter(c => !c.industryCode || c.industryCode === '');
+  if (!unclassified.length) { toast('All companies already classified!'); return; }
+  if (classifyRunning) return;
+  classifyRunning = true;
+  stopRequested = false;
+  document.getElementById('classify-progress').style.display = 'block';
+  document.getElementById('btn-classify-all').disabled = true;
+  document.getElementById('btn-stop').style.display = 'inline-flex';
+  document.getElementById('btn-stop').disabled = false;
+  document.getElementById('btn-stop').textContent = '⏹ Stop';
+  const log = document.getElementById('ai-log');
+  log.innerHTML = '';
+  let done = 0;
+  for (const company of unclassified) {
+    if (stopRequested) {
+      saveDB(); renderClassifyTable(); renderDashboard(); updateBadge();
+      document.getElementById('classify-status').textContent = `Stopped — ${done} classified, ${unclassified.length - done} remaining.`;
+      document.getElementById('classify-count').textContent = `${done} / ${unclassified.length}`;
+      document.getElementById('btn-stop').style.display = 'none';
+      document.getElementById('btn-classify-all').disabled = false;
+      classifyRunning = false;
+      stopRequested = false;
+      log.innerHTML += `<div class="log-line log-warn">[---] ⏹ Stopped by user. ${unclassified.length - done} companies still unclassified. Click "Classify All" to resume.</div>`;
+      log.scrollTop = log.scrollHeight;
+      toast(`⏹ Stopped — ${done} classified, ${unclassified.length - done} remaining`);
+      return;
+    }
+    document.getElementById('classify-status').textContent = `Classifying: ${company.name.slice(0, 40)}...`;
+    document.getElementById('classify-count').textContent = `${done} / ${unclassified.length}`;
+    document.getElementById('classify-bar').style.width = (done / unclassified.length * 100) + '%';
+
+    const result = await classifyWithAI(company);
+    const idx = DB.findIndex(d => d.id === company.id);
+    if (idx !== -1) {
+      DB[idx].industryCode = result.industryCode || result.code || 'OTHR';
+      DB[idx].industryName = result.industryName || INDUSTRY_CODES[DB[idx].industryCode];
+      DB[idx].subIndustry = result.subIndustry || '';
+      DB[idx].mainProducts = result.mainProducts || DB[idx].mainProducts;
+      DB[idx].confidence = result.confidence || 70;
+      DB[idx].services = SERVICE_MAP[DB[idx].industryCode] || ['Solar EPC','Energy Audit'];
+      DB[idx].status = DB[idx].confidence >= 90 ? 'Auto-Approved' : DB[idx].confidence >= 70 ? 'Check' : 'Manual Review';
+      DB[idx].leadScore = Math.min(100, DB[idx].confidence + (DB[idx].email ? 5 : 0) + (DB[idx].website ? 5 : 0));
+    }
+    const cls = result.confidence >= 90 ? 'log-ok' : result.confidence >= 70 ? 'log-warn' : 'log-err';
+    log.innerHTML += `<div class="log-line ${cls}">[${String(done+1).padStart(3,'0')}] ${company.name.slice(0,35).padEnd(35)} → ${DB[idx]?.industryCode || 'OTHR'} (${result.confidence}%)</div>`;
+    log.scrollTop = log.scrollHeight;
+    done++;
+    if (done % 5 === 0) { saveDB(); renderClassifyTable(); }
+    await new Promise(r => setTimeout(r, 200));
+  }
+  saveDB();
+  renderClassifyTable();
+  renderDashboard();
+  updateBadge();
+  document.getElementById('classify-status').textContent = `Done! All ${done} companies classified.`;
+  document.getElementById('classify-count').textContent = `${done} / ${unclassified.length}`;
+  document.getElementById('classify-bar').style.width = '100%';
+  document.getElementById('btn-stop').style.display = 'none';
+  document.getElementById('btn-classify-all').disabled = false;
+  classifyRunning = false;
+  toast(`✅ Classified ${done} companies`);
+}
+
+async function classifySelected() {
+  const checked = [...document.querySelectorAll('.row-check:checked')].map(cb => cb.dataset.id);
+  if (!checked.length) { toast('Select companies first'); return; }
+  const companies = DB.filter(c => checked.includes(String(c.id)));
+  for (const company of companies) {
+    const result = await classifyWithAI(company);
+    const idx = DB.findIndex(d => d.id === company.id);
+    if (idx !== -1) {
+      DB[idx].industryCode = result.industryCode || result.code || 'OTHR';
+      DB[idx].industryName = result.industryName || INDUSTRY_CODES[DB[idx].industryCode];
+      DB[idx].confidence = result.confidence || 70;
+      DB[idx].services = SERVICE_MAP[DB[idx].industryCode] || [];
+      DB[idx].status = DB[idx].confidence >= 90 ? 'Auto-Approved' : DB[idx].confidence >= 70 ? 'Check' : 'Manual Review';
+    }
+  }
+  saveDB(); renderClassifyTable(); toast(`Classified ${companies.length} companies`);
+}
+
+function toggleSelectAll(cb) {
+  document.querySelectorAll('.row-check').forEach(c => c.checked = cb.checked);
+}
+
+function renderClassifyTable() {
+  const search = document.getElementById('classify-search').value.toLowerCase();
+  const statusF = document.getElementById('classify-filter-status').value;
+  const cityF = document.getElementById('classify-filter-city').value;
+  let rows = DB.filter(c => {
+    if (search && !c.name.toLowerCase().includes(search) && !c.city.toLowerCase().includes(search)) return false;
+    if (cityF && c.city !== cityF) return false;
+    if (statusF === 'classified' && !c.industryCode) return false;
+    if (statusF === 'unclassified' && c.industryCode) return false;
+    if (statusF === 'review' && c.status !== 'Manual Review') return false;
+    return true;
+  });
+  const tbody = document.getElementById('classify-tbody');
+  const empty = document.getElementById('classify-empty');
+  if (!rows.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+  tbody.innerHTML = rows.map(c => {
+    const conf = c.confidence || 0;
+    const cls = conf >= 90 ? 'conf-high' : conf >= 70 ? 'conf-mid' : 'conf-low';
+    const statusBadge = c.status === 'Auto-Approved' ? 'badge-green' : c.status === 'Check' ? 'badge-amber' : c.status === 'Manual Review' ? 'badge-red' : 'badge-gray';
+    const tags = (c.services||[]).slice(0,2).map(s => `<span class="service-tag">${s}</span>`).join('') + (c.services?.length > 2 ? `<span class="service-tag">+${c.services.length-2}</span>` : '');
+    return `<tr>
+      <td><input type="checkbox" class="row-check" data-id="${c.id}"></td>
+      <td style="font-weight:500;max-width:200px;">${c.name}</td>
+      <td><span class="text-muted">${c.city||c.gidc||'—'}</span></td>
+      <td>${c.industryCode ? `<strong>${c.industryCode}</strong> <span class="text-muted">${c.industryName||''}</span>` : '<span class="text-muted">—</span>'}</td>
+      <td>${conf ? `<div class="conf-circle ${cls}">${conf}%</div>` : '<span class="text-muted">—</span>'}</td>
+      <td>${tags || '<span class="text-muted">—</span>'}</td>
+      <td><span class="badge ${statusBadge}">${c.status||'Unclassified'}</span></td>
+      <td><button class="btn btn-sm" onclick="reclassify('${c.id}')">↻</button></td>
+    </tr>`;
+  }).join('');
+}
+
+async function reclassify(id) {
+  const company = DB.find(c => String(c.id) === String(id));
+  if (!company) return;
+  const result = await classifyWithAI(company);
+  const idx = DB.findIndex(d => String(d.id) === String(id));
+  DB[idx].industryCode = result.industryCode || result.code || 'OTHR';
+  DB[idx].industryName = result.industryName || INDUSTRY_CODES[DB[idx].industryCode];
+  DB[idx].confidence = result.confidence || 70;
+  DB[idx].services = SERVICE_MAP[DB[idx].industryCode] || [];
+  DB[idx].status = DB[idx].confidence >= 90 ? 'Auto-Approved' : DB[idx].confidence >= 70 ? 'Check' : 'Manual Review';
+  saveDB(); renderClassifyTable(); toast('Re-classified!');
+}
+
+function refreshCityFilters() {
+  const cities = [...new Set(DB.map(c => c.city).filter(Boolean))];
+  ['classify-filter-city'].forEach(id => {
+    const sel = document.getElementById(id);
+    const val = sel.value;
+    sel.innerHTML = '<option value="">All cities</option>' + cities.map(c => `<option>${c}</option>`).join('');
+    sel.value = val;
+  });
+}
+
+// ===================== DATABASE =====================
+function renderDBTable() {
+  const search = document.getElementById('db-search').value.toLowerCase();
+  const indF = document.getElementById('db-filter-industry').value;
+  const cityF = document.getElementById('db-filter-city').value;
+  const custF = document.getElementById('db-filter-customer').value;
+  let rows = DB.filter(c => {
+    if (search && !c.name.toLowerCase().includes(search) && !(c.city||'').toLowerCase().includes(search)) return false;
+    if (indF && c.industryCode !== indF) return false;
+    if (cityF && c.city !== cityF) return false;
+    if (custF && c.existingCustomer !== custF) return false;
+    return true;
+  });
+  const tbody = document.getElementById('db-tbody');
+  const empty = document.getElementById('db-empty');
+  if (!rows.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+  tbody.innerHTML = rows.map(c => {
+    const tags = (c.services||[]).slice(0,2).map(s => `<span class="service-tag">${s}</span>`).join('') + (c.services?.length > 2 ? `<span class="service-tag">+${c.services.length-2}</span>` : '');
+    const score = c.leadScore ? `<span class="badge ${c.leadScore>=80?'badge-green':c.leadScore>=60?'badge-amber':'badge-gray'}">${c.leadScore}</span>` : '—';
+    return `<tr>
+      <td style="font-weight:500;max-width:180px;">${c.name}</td>
+      <td class="text-muted">${c.city||c.gidc||'—'}</td>
+      <td>${c.industryCode ? `<span class="badge badge-green">${c.industryCode}</span>` : '<span class="text-muted">—</span>'}</td>
+      <td class="text-muted">${c.contactPerson||'—'}</td>
+      <td style="color:var(--blue-400);font-size:12px;">${c.email||'—'}</td>
+      <td>${tags||'—'}</td>
+      <td><span class="badge ${c.existingCustomer==='Y'?'badge-green':'badge-gray'}">${c.existingCustomer==='Y'?'Customer':'Lead'}</span></td>
+      <td>${score}</td>
+      <td><button class="btn btn-sm" onclick="deleteCompany('${c.id}')">🗑</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function refreshDBFilters() {
+  const industries = [...new Set(DB.map(c => c.industryCode).filter(Boolean))];
+  const cities = [...new Set(DB.map(c => c.city).filter(Boolean))];
+  const indSel = document.getElementById('db-filter-industry');
+  const citySel = document.getElementById('db-filter-city');
+  indSel.innerHTML = '<option value="">All industries</option>' + industries.map(i => `<option value="${i}">${i} — ${INDUSTRY_CODES[i]||i}</option>`).join('');
+  citySel.innerHTML = '<option value="">All cities</option>' + cities.map(c => `<option>${c}</option>`).join('');
+  const campInd = document.getElementById('camp-industry');
+  if (campInd) campInd.innerHTML = '<option value="">All industries</option>' + Object.entries(INDUSTRY_CODES).map(([k,v]) => `<option value="${k}">${k} — ${v}</option>`).join('');
+}
+
+function deleteCompany(id) {
+  DB = DB.filter(c => String(c.id) !== String(id));
+  saveDB(); renderDBTable(); updateBadge(); toast('Company removed');
+}
+
+function exportDB() {
+  const rows = DB.map(c => ({
+    'Company Name': c.name, 'GIDC': c.gidc, 'City': c.city, 'State': c.state,
+    'Email': c.email, 'Phone': c.phone, 'Website': c.website,
+    'Industry Code': c.industryCode, 'Industry': c.industryName,
+    'Sub Industry': c.subIndustry, 'Main Products': c.mainProducts,
+    'Services Tagged': (c.services||[]).join(', '),
+    'Confidence %': c.confidence, 'Status': c.status,
+    'Existing Customer': c.existingCustomer, 'Lead Score': c.leadScore, 'Notes': c.notes
+  }));
+  const ws = XLSX.utils.json_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Master Database');
+  XLSX.writeFile(wb, 'Revive_Master_Database.xlsx');
+  toast('📥 Exported to Excel');
+}
+
+// ===================== MANUAL ADD =====================
+function addCompanyManual() {
+  const name = document.getElementById('add-name').value.trim();
+  if (!name) { toast('Company name is required'); return; }
+  const company = {
+    id: Date.now() + Math.random(),
+    name, gidc: document.getElementById('add-gidc').value,
+    city: document.getElementById('add-city').value,
+    state: 'Gujarat', email: document.getElementById('add-email').value,
+    phone: document.getElementById('add-phone').value,
+    website: document.getElementById('add-website').value,
+    contactPerson: '', designation: '', industryCode: '', industryName: '',
+    subIndustry: '', mainProducts: '', services: [], confidence: 0,
+    existingCustomer: document.getElementById('add-customer').value,
+    leadScore: '', status: 'Unclassified', notes: '', source: 'Manual'
+  };
+  DB.push(company);
+  saveDB(); updateBadge(); hideModal('add-modal');
+  ['add-name','add-gidc','add-city','add-email','add-phone','add-website'].forEach(id => document.getElementById(id).value = '');
+  toast(`✅ ${name} added`);
+  renderDBTable();
+}
+
+// ===================== DASHBOARD =====================
+function renderDashboard() {
+  const total = DB.length;
+  const classified = DB.filter(c => c.industryCode).length;
+  const high = DB.filter(c => c.confidence >= 90).length;
+  const review = DB.filter(c => c.status === 'Manual Review').length;
+  document.getElementById('stat-total').textContent = total;
+  document.getElementById('stat-classified').textContent = classified;
+  document.getElementById('stat-classified-pct').textContent = total ? Math.round(classified/total*100) + '% of total' : '0%';
+  document.getElementById('stat-high').textContent = high;
+  document.getElementById('stat-review').textContent = review;
+
+  // Industry chart
+  const indChart = document.getElementById('industry-chart');
+  if (!classified) { indChart.innerHTML = '<div class="empty-state"><div class="empty-icon">📊</div><p>Classify companies to see breakdown</p></div>'; }
+  else {
+    const counts = {};
+    DB.forEach(c => { if (c.industryCode) counts[c.industryCode] = (counts[c.industryCode]||0)+1; });
+    const sorted = Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,6);
+    const max = sorted[0][1];
+    indChart.innerHTML = sorted.map(([code,count]) => `<div style="margin-bottom:10px;"><div style="display:flex;justify-content:space-between;margin-bottom:3px;"><span style="font-size:12px;font-weight:500;">${code} — ${INDUSTRY_CODES[code]||code}</span><span style="font-size:12px;color:var(--text-3);">${count}</span></div><div class="progress-bar-wrap" style="height:8px;"><div class="progress-bar" style="width:${Math.round(count/max*100)}%;background:var(--green-400);"></div></div></div>`).join('');
+  }
+
+  // Service chart
+  const svcChart = document.getElementById('service-chart');
+  const svcCounts = {};
+  DB.forEach(c => (c.services||[]).forEach(s => svcCounts[s] = (svcCounts[s]||0)+1));
+  const topSvc = Object.entries(svcCounts).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  if (!topSvc.length) { svcChart.innerHTML = '<div class="empty-state"><div class="empty-icon">🌱</div><p>Classify companies to see opportunities</p></div>'; }
+  else { const mx = topSvc[0][1]; svcChart.innerHTML = topSvc.map(([s,n])=>`<div style="margin-bottom:10px;"><div style="display:flex;justify-content:space-between;margin-bottom:3px;"><span style="font-size:12px;font-weight:500;">${s}</span><span style="font-size:12px;color:var(--text-3);">${n} cos</span></div><div class="progress-bar-wrap" style="height:8px;"><div class="progress-bar" style="width:${Math.round(n/mx*100)}%;background:var(--teal-400);"></div></div></div>`).join(''); }
+
+  // Recent
+  const recent = [...DB].reverse().slice(0,5);
+  const ra = document.getElementById('recent-activity');
+  if (!recent.length) { ra.innerHTML = '<div class="empty-state"><div class="empty-icon">🕐</div><p>No activity yet.</p></div>'; }
+  else { ra.innerHTML = recent.map(c => `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);"><div><div style="font-weight:500;font-size:13px;">${c.name}</div><div class="text-muted">${c.city||c.gidc||'—'} · ${c.source||'Imported'}</div></div><span class="badge ${c.industryCode?'badge-green':'badge-gray'}">${c.industryCode||'Unclassified'}</span></div>`).join(''); }
+}
+
+// ===================== CAMPAIGNS =====================
+let activeCampaignTab = 'active';
+function switchCampaignTab(tab, el) {
+  activeCampaignTab = tab;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderCampaigns();
+}
+
+function renderCampaigns() {
+  const list = document.getElementById('campaigns-list');
+  const filtered = campaigns.filter(c => c.status === activeCampaignTab);
+  if (!filtered.length) { list.innerHTML = '<div class="empty-state"><div class="empty-icon">📧</div><p>No ' + activeCampaignTab + ' campaigns.</p></div>'; return; }
+  list.innerHTML = filtered.map(c => `<div class="campaign-card">
+    <div>
+      <div style="font-weight:600;font-size:14px;">${c.name}</div>
+      <div class="campaign-meta">${c.industry ? c.industry + ' · ' : ''}${c.service||'All services'} · ${c.subject||'No subject'}</div>
+      <div class="campaign-meta" style="margin-top:4px;">${c.leads} leads targeted · Scheduled: ${c.date||'TBD'}</div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <span class="badge ${c.status==='active'?'badge-green':c.status==='completed'?'badge-blue':'badge-gray'}">${c.status}</span>
+      <button class="btn btn-sm" onclick="deleteCampaign('${c.id}')">🗑</button>
+    </div>
+  </div>`).join('');
+}
+
+function createCampaign() {
+  const name = document.getElementById('camp-name').value.trim();
+  if (!name) { toast('Campaign name required'); return; }
+  const industry = document.getElementById('camp-industry').value;
+  const service = document.getElementById('camp-service').value;
+  const leads = DB.filter(c => (!industry || c.industryCode === industry) && (!service || (c.services||[]).includes(service))).length;
+  campaigns.push({ id: Date.now(), name, industry, service, subject: document.getElementById('camp-subject').value, date: document.getElementById('camp-date').value, leads, status: 'draft' });
+  saveDB(); hideModal('campaign-modal'); renderCampaigns();
+  document.getElementById('camp-name').value = ''; document.getElementById('camp-subject').value = '';
+  toast(`✅ Campaign created — ${leads} leads targeted`);
+}
+
+function deleteCampaign(id) { campaigns = campaigns.filter(c => String(c.id) !== String(id)); saveDB(); renderCampaigns(); }
+
+function buildSegment() {
+  const ind = document.getElementById('seg-industry').value;
+  const svc = document.getElementById('seg-service').value;
+  const cust = document.getElementById('seg-customer').value;
+  const results = DB.filter(c => (!ind || c.industryCode === ind) && (!svc || (c.services||[]).includes(svc)) && (!cust || c.existingCustomer === cust));
+  const el = document.getElementById('segment-result');
+  if (!results.length) { el.innerHTML = '<div class="text-muted" style="margin-top:12px;">No companies match these filters.</div>'; return; }
+  el.innerHTML = `<div style="margin-top:14px;"><div style="font-size:14px;font-weight:600;margin-bottom:8px;">Segment: ${results.length} companies</div>${results.slice(0,5).map(c => `<div style="padding:8px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;"><span style="font-size:13px;font-weight:500;">${c.name}</span><span class="text-muted">${c.city||'—'} · ${c.industryCode||'—'}</span></div>`).join('')}${results.length>5?`<div class="text-muted" style="padding:8px 0;">…and ${results.length-5} more</div>`:''}<div style="margin-top:12px;display:flex;gap:8px;"><button class="btn btn-primary btn-sm" onclick="exportSegment(${JSON.stringify(results.map(c=>c.id))})">⬇ Export Segment</button><button class="btn btn-sm" onclick="showModal('campaign-modal')">+ Create Campaign from This</button></div></div>`;
+}
+
+function exportSegment(ids) {
+  const seg = DB.filter(c => ids.includes(c.id));
+  const rows = seg.map(c => ({ 'Company': c.name, 'City': c.city, 'Industry': c.industryName, 'Email': c.email, 'Phone': c.phone, 'Services': (c.services||[]).join(', ') }));
+  const ws = XLSX.utils.json_to_sheet(rows); const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Segment');
+  XLSX.writeFile(wb, 'Revive_Segment.xlsx'); toast('📥 Segment exported');
+}
+
+function refreshCampaignIndustries() { refreshDBFilters(); }
+function refreshSegIndustries() {
+  const sel = document.getElementById('seg-industry');
+  if (!sel) return;
+  const industries = [...new Set(DB.map(c => c.industryCode).filter(Boolean))];
+  sel.innerHTML = '<option value="">Any industry</option>' + industries.map(i => `<option value="${i}">${i} — ${INDUSTRY_CODES[i]||i}</option>`).join('');
+}
+
+// ===================== UTILS =====================
+function updateBadge() {
+  document.getElementById('total-badge').textContent = DB.length + ' companies';
+}
+
+function showModal(id) { document.getElementById(id).classList.add('open'); }
+function hideModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(m => m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); }));
+
+function toast(msg) {
+  const wrap = document.getElementById('toast-wrap');
+  const t = document.createElement('div');
+  t.className = 'toast'; t.textContent = msg;
+  wrap.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+
+// ===================== INIT =====================
+updateBadge();
+renderDashboard();
+</script>
+</body>
+</html>
