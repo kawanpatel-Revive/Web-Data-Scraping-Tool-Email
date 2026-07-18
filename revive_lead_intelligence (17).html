@@ -1,0 +1,2160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Revive Lead Intelligence</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+  if (typeof pdfjsLib !== 'undefined') pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+</script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --green-50: #EAF3DE; --green-100: #C0DD97; --green-200: #97C459;
+    --green-400: #639922; --green-600: #3B6D11; --green-800: #27500A; --green-900: #173404;
+    --teal-50: #E1F5EE; --teal-100: #9FE1CB; --teal-200: #5DCAA5;
+    --teal-400: #1D9E75; --teal-600: #0F6E56; --teal-800: #085041; --teal-900: #04342C;
+    --amber-50: #FAEEDA; --amber-100: #FAC775; --amber-200: #EF9F27;
+    --amber-400: #BA7517; --amber-600: #854F0B; --amber-800: #633806;
+    --gray-50: #F1EFE8; --gray-100: #D3D1C7; --gray-200: #B4B2A9;
+    --gray-400: #888780; --gray-600: #5F5E5A; --gray-800: #444441; --gray-900: #2C2C2A;
+    --blue-50: #E6F1FB; --blue-100: #B5D4F4; --blue-400: #378ADD; --blue-800: #0C447C;
+    --red-50: #FCEBEB; --red-100: #F7C1C1; --red-400: #E24B4A; --red-800: #791F1F;
+    --surface: #ffffff;
+    --surface-2: #f8f9f7;
+    --surface-3: #f2f4f0;
+    --border: rgba(0,0,0,0.1);
+    --text: #1a1a18;
+    --text-2: #5f5e5a;
+    --text-3: #888780;
+    --radius: 10px;
+    --radius-lg: 14px;
+    --sidebar-width: 220px;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--surface-3);
+    color: var(--text);
+    display: flex;
+    min-height: 100vh;
+    font-size: 14px;
+  }
+
+  /* SIDEBAR */
+  .sidebar {
+    width: var(--sidebar-width);
+    background: var(--green-900);
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    z-index: 100;
+  }
+  .sidebar-logo {
+    padding: 20px 18px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+  .sidebar-logo .brand { font-size: 15px; font-weight: 600; color: var(--green-100); letter-spacing: -0.2px; }
+  .sidebar-logo .sub { font-size: 11px; color: var(--green-200); margin-top: 2px; opacity: 0.7; }
+  .nav { padding: 12px 0; flex: 1; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 18px; cursor: pointer;
+    font-size: 13px; color: rgba(255,255,255,0.6);
+    border-left: 2px solid transparent;
+    transition: all 0.15s;
+  }
+  .nav-item:hover { background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.9); }
+  .nav-item.active { background: rgba(255,255,255,0.1); color: #fff; border-left-color: var(--green-200); }
+  .nav-item .icon { font-size: 16px; width: 20px; text-align: center; }
+  .nav-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; color: rgba(255,255,255,0.3); padding: 14px 18px 4px; }
+
+  /* MAIN */
+  .main { margin-left: var(--sidebar-width); flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+
+  .topbar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 28px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 50;
+  }
+  .topbar-title { font-size: 16px; font-weight: 600; color: var(--text); }
+  .topbar-sub { font-size: 12px; color: var(--text-3); margin-top: 1px; }
+  .badge { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; }
+  .badge-green { background: var(--green-50); color: var(--green-800); }
+  .badge-amber { background: var(--amber-50); color: var(--amber-600); }
+  .badge-blue { background: var(--blue-50); color: var(--blue-800); }
+  .badge-red { background: var(--red-50); color: var(--red-800); }
+  .badge-gray { background: var(--gray-50); color: var(--gray-800); }
+
+  .content { padding: 24px 28px; flex: 1; }
+
+  /* CARDS */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 20px 22px;
+    margin-bottom: 20px;
+  }
+  .card-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+  .card-sub { font-size: 12px; color: var(--text-3); }
+
+  /* STATS ROW */
+  .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+  }
+  .stat-label { font-size: 11px; color: var(--text-3); font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+  .stat-value { font-size: 26px; font-weight: 600; color: var(--text); line-height: 1; }
+  .stat-sub { font-size: 11px; color: var(--text-3); margin-top: 4px; }
+
+  /* UPLOAD ZONE */
+  .upload-zone {
+    border: 1.5px dashed var(--green-200);
+    border-radius: var(--radius-lg);
+    padding: 40px 24px;
+    text-align: center;
+    background: var(--green-50);
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-bottom: 16px;
+  }
+  .upload-zone:hover { border-color: var(--green-400); background: #e0efd0; }
+  .upload-zone.drag-over { border-color: var(--green-400); background: #d5eabf; border-style: solid; }
+  .upload-zone .upload-icon { font-size: 36px; color: var(--green-400); margin-bottom: 10px; display: block; }
+  .upload-zone .upload-title { font-size: 15px; font-weight: 600; color: var(--green-800); margin-bottom: 4px; }
+  .upload-zone .upload-hint { font-size: 12px; color: var(--green-600); }
+  #file-input { display: none; }
+
+  /* TABLE */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th {
+    text-align: left; padding: 9px 12px;
+    background: var(--surface-2);
+    border-bottom: 1px solid var(--border);
+    color: var(--text-2); font-weight: 600;
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;
+    white-space: nowrap;
+  }
+  tbody td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover { background: var(--surface-2); }
+
+  /* BUTTONS */
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 16px; border-radius: var(--radius);
+    font-size: 13px; font-weight: 500; cursor: pointer;
+    border: 1px solid var(--border); background: var(--surface);
+    color: var(--text); transition: all 0.15s;
+  }
+  .btn:hover { background: var(--surface-2); }
+  .btn-primary { background: var(--green-600); color: #fff; border-color: var(--green-600); }
+  .btn-primary:hover { background: var(--green-800); border-color: var(--green-800); }
+  .btn-sm { padding: 5px 10px; font-size: 12px; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* PROGRESS */
+  .progress-bar-wrap { background: var(--surface-3); border-radius: 20px; height: 6px; overflow: hidden; margin: 8px 0; }
+  .progress-bar { height: 100%; border-radius: 20px; background: var(--green-400); transition: width 0.3s; }
+
+  /* CLASSIFY PANEL */
+  .classify-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .filter-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 16px; }
+  .filter-row select, .filter-row input {
+    padding: 7px 11px; border-radius: var(--radius); border: 1px solid var(--border);
+    background: var(--surface); color: var(--text); font-size: 13px;
+  }
+  .filter-row select:focus, .filter-row input:focus { outline: 2px solid var(--green-200); border-color: var(--green-400); }
+
+  /* AI LOG */
+  .ai-log {
+    background: var(--gray-900);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    color: var(--green-100);
+    max-height: 200px;
+    overflow-y: auto;
+    margin-top: 12px;
+  }
+  .ai-log .log-line { margin-bottom: 3px; line-height: 1.5; }
+  .ai-log .log-ok { color: var(--green-200); }
+  .ai-log .log-warn { color: var(--amber-200); }
+  .ai-log .log-err { color: #F09595; }
+
+  /* SERVICE TAGS */
+  .service-tag {
+    display: inline-block; padding: 2px 8px; border-radius: 20px;
+    font-size: 11px; font-weight: 500;
+    background: var(--teal-50); color: var(--teal-800);
+    margin: 2px;
+  }
+
+  /* TABS */
+  .tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
+  .tab {
+    padding: 9px 16px; font-size: 13px; font-weight: 500;
+    color: var(--text-3); cursor: pointer; border-bottom: 2px solid transparent;
+    margin-bottom: -1px; transition: all 0.15s;
+  }
+  .tab.active { color: var(--green-600); border-bottom-color: var(--green-600); }
+  .tab:hover:not(.active) { color: var(--text); }
+
+  /* CAMPAIGN */
+  .campaign-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 18px 20px;
+    margin-bottom: 12px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .campaign-meta { font-size: 11px; color: var(--text-3); margin-top: 3px; }
+
+  /* MODAL */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+    display: none; align-items: center; justify-content: center; z-index: 200;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface); border-radius: var(--radius-lg);
+    padding: 24px; width: 480px; max-width: 95vw;
+    border: 1px solid var(--border);
+  }
+  .modal-title { font-size: 16px; font-weight: 600; margin-bottom: 16px; }
+  .form-row { margin-bottom: 14px; }
+  .form-label { font-size: 12px; font-weight: 500; color: var(--text-2); margin-bottom: 5px; display: block; }
+  .form-input {
+    width: 100%; padding: 8px 12px; border-radius: var(--radius);
+    border: 1px solid var(--border); font-size: 13px;
+    background: var(--surface); color: var(--text);
+  }
+  .form-input:focus { outline: 2px solid var(--green-200); border-color: var(--green-400); }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; }
+
+  /* PAGES */
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* CONFIDENCE CIRCLE */
+  .conf-circle {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 38px; height: 38px; border-radius: 50%;
+    font-size: 11px; font-weight: 700;
+  }
+  .conf-high { background: var(--green-50); color: var(--green-800); }
+  .conf-mid { background: var(--amber-50); color: var(--amber-600); }
+  .conf-low { background: var(--red-50); color: var(--red-800); }
+
+  /* EMPTY STATE */
+  .empty-state { text-align: center; padding: 60px 24px; color: var(--text-3); }
+  .empty-state .empty-icon { font-size: 40px; margin-bottom: 12px; opacity: 0.4; }
+  .empty-state p { font-size: 14px; }
+
+  /* SPINNER */
+  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--green-200); border-top-color: var(--green-600); border-radius: 50%; animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* TOAST */
+  .toast-wrap { position: fixed; bottom: 24px; right: 24px; display: flex; flex-direction: column; gap: 8px; z-index: 999; }
+  .toast {
+    background: var(--gray-900); color: #fff;
+    padding: 10px 16px; border-radius: var(--radius);
+    font-size: 13px; animation: fadeUp 0.2s ease;
+  }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+  .mt-12 { margin-top: 12px; }
+  .flex { display: flex; }
+  .gap-10 { gap: 10px; }
+  .align-center { align-items: center; }
+  .justify-between { justify-content: space-between; }
+  .text-muted { color: var(--text-3); font-size: 12px; }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <div class="brand">🌿 Revive</div>
+    <div class="sub">Lead Intelligence</div>
+  </div>
+  <div class="nav">
+    <div class="nav-label">Main</div>
+    <div class="nav-item active" onclick="showPage('dashboard')">
+      <span class="icon">📊</span> Dashboard
+    </div>
+    <div class="nav-item" onclick="showPage('upload')">
+      <span class="icon">📂</span> Upload Data
+    </div>
+    <div class="nav-item" onclick="showPage('classify')">
+      <span class="icon">🤖</span> AI Classify
+    </div>
+    <div class="nav-item" onclick="showPage('database')">
+      <span class="icon">🗄️</span> Database
+    </div>
+    <div class="nav-label">Outreach</div>
+    <div class="nav-item" onclick="showPage('campaigns')">
+      <span class="icon">📧</span> Campaigns
+    </div>
+    <div class="nav-item" onclick="showPage('bulkreview')">
+      <span class="icon">✏️</span> Bulk Review
+    </div>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- TOPBAR -->
+  <div class="topbar" id="topbar">
+    <div>
+      <div class="topbar-title" id="topbar-title">Dashboard</div>
+      <div class="topbar-sub" id="topbar-sub">Overview of your lead intelligence system</div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <span class="badge badge-green" id="total-badge">0 companies</span>
+      <button class="btn btn-primary btn-sm" onclick="showPage('upload')">+ Upload Data</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- DASHBOARD PAGE -->
+    <div class="page active" id="page-dashboard">
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="stat-label">Total Companies</div>
+          <div class="stat-value" id="stat-total">0</div>
+          <div class="stat-sub">across all cities</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Classified</div>
+          <div class="stat-value" id="stat-classified">0</div>
+          <div class="stat-sub" id="stat-classified-pct">0% of total</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">High Confidence</div>
+          <div class="stat-value" id="stat-high">0</div>
+          <div class="stat-sub">≥90% auto-approved</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Need Review</div>
+          <div class="stat-value" id="stat-review">0</div>
+          <div class="stat-sub" style="color:var(--amber-400);">below 70% confidence</div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div class="card">
+          <div class="card-title">Industry Breakdown</div>
+          <div class="card-sub">Top industries in your database</div>
+          <div id="industry-chart" style="margin-top:16px;">
+            <div class="empty-state"><div class="empty-icon">📊</div><p>Upload data to see breakdown</p></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Service Opportunities</div>
+          <div class="card-sub">Most tagged Revive services</div>
+          <div id="service-chart" style="margin-top:16px;">
+            <div class="empty-state"><div class="empty-icon">🌱</div><p>Classify companies to see opportunities</p></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:0;">
+        <div class="card-title">Recent Activity</div>
+        <div id="recent-activity">
+          <div class="empty-state"><div class="empty-icon">🕐</div><p>No activity yet. Start by uploading your Excel files.</p></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- UPLOAD PAGE -->
+    <div class="page" id="page-upload">
+      <div class="card">
+        <div class="card-title">Upload Company Excel Files</div>
+        <div class="card-sub" style="margin-bottom:20px;">Upload your GIDC city Excel files (.xlsx or .csv). Each file will be merged into the master database.</div>
+        <div style="background:var(--blue-50);border:1px solid var(--blue-100);border-radius:var(--radius);padding:12px 16px;margin-bottom:16px;font-size:12px;color:var(--blue-800);">
+          💡 <strong>Tip:</strong> If companies were imported incorrectly before, click <strong>"Clear All Data"</strong> below to start fresh, then re-upload.
+          <button class="btn btn-sm" style="margin-left:10px;border-color:var(--red-400);color:var(--red-800);" onclick="clearAllData()">🗑 Clear All Data</button>
+        </div>
+
+        <div class="upload-zone" onclick="document.getElementById('file-input').click()" id="upload-zone">
+          <span class="upload-icon">📤</span>
+          <div class="upload-title">Drop your files here</div>
+          <div class="upload-hint">Supports .xlsx, .csv and .pdf — multiple files at once</div>
+        </div>
+        <input type="file" id="file-input" multiple accept=".xlsx,.csv,.pdf" onchange="handleFiles(event)">
+        <div id="import-report" style="display:none;"></div>
+
+        <div id="upload-preview" style="display:none;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+            <div class="card-title">Preview — Column Mapping</div>
+            <button class="btn btn-primary btn-sm" onclick="importData()">Import to Database</button>
+          </div>
+          <div id="staged-files-list"></div>
+          <div id="column-mapper"></div>
+          <div class="table-wrap" style="margin-top:16px;">
+            <table id="preview-table"></table>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" id="uploaded-files-card" style="display:none;">
+        <div class="card-title">Uploaded Files</div>
+        <div id="uploaded-files-list"></div>
+      </div>
+    </div>
+
+    <!-- CLASSIFY PAGE -->
+    <div class="page" id="page-classify">
+      <div class="card">
+        <div style="margin-bottom:16px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+            <div>
+              <div class="card-title">AI Industry Classification</div>
+              <div class="card-sub">Gemini searches Google live for each company, then classifies by sector (needs a free Gemini key — set it on the Bulk Review page)</div>
+            </div>
+            <div style="display:flex;gap:8px;">
+              <button class="btn btn-sm" onclick="classifySelected()" id="btn-classify-sel">Classify Selected</button>
+              <button class="btn btn-primary btn-sm" onclick="classifyAll()" id="btn-classify-all">▶ Classify All Unclassified</button>
+            </div>
+          </div>
+
+          <!-- METHOD CARDS -->
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;">
+            <div style="background:var(--green-50);border:1px solid var(--green-100);border-radius:var(--radius);padding:12px;">
+              <div style="font-size:11px;font-weight:700;color:var(--green-800);margin-bottom:4px;">METHOD 1</div>
+              <div style="font-size:12px;font-weight:600;color:var(--green-900);">🔤 Name Keywords</div>
+              <div style="font-size:11px;color:var(--green-600);margin-top:3px;">Instant. Reads company name for industry clues like "Chem", "Pharma", "Pack". Used as a fallback if search fails.</div>
+              <div style="margin-top:6px;"><span class="badge badge-green" style="font-size:10px;">Always ON</span></div>
+            </div>
+            <div style="background:var(--blue-50);border:1px solid var(--blue-100);border-radius:var(--radius);padding:12px;">
+              <div style="font-size:11px;font-weight:700;color:var(--blue-800);margin-bottom:4px;">METHOD 2</div>
+              <div style="font-size:12px;font-weight:600;color:var(--blue-800);">🔎 Live Google Search (Gemini)</div>
+              <div style="font-size:11px;color:var(--blue-400);margin-top:3px;">Gemini searches Google directly for each company and reads the results. Needs a free Gemini API key — paste one on the Bulk Review page, it's shared across the whole app.</div>
+              <div style="margin-top:6px;display:flex;align-items:center;gap:6px;">
+                <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:11px;color:var(--blue-800);">
+                  <input type="checkbox" id="method2-toggle" checked> Enable
+                </label>
+              </div>
+            </div>
+            <div style="background:var(--teal-50);border:1px solid var(--teal-100);border-radius:var(--radius);padding:12px;">
+              <div style="font-size:11px;font-weight:700;color:var(--teal-800);margin-bottom:4px;">METHOD 3</div>
+              <div style="font-size:12px;font-weight:600;color:var(--teal-800);">🤖 AI Reasoning</div>
+              <div style="font-size:11px;color:var(--teal-600);margin-top:3px;">Combines search results with GIDC location clues to decide the final industry + confidence score.</div>
+              <div style="margin-top:6px;"><span class="badge" style="background:var(--teal-50);color:var(--teal-800);font-size:10px;">Always ON</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div id="classify-progress" style="display:none;margin-bottom:12px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+            <span class="text-muted" id="classify-status">Classifying...</span>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span class="text-muted" id="classify-count">0 / 0</span>
+              <button class="btn btn-sm" id="btn-stop" onclick="stopClassify()" style="border-color:var(--red-400);color:var(--red-800);display:none;">⏹ Stop</button>
+            </div>
+          </div>
+          <div class="progress-bar-wrap"><div class="progress-bar" id="classify-bar" style="width:0%"></div></div>
+          <div class="ai-log" id="ai-log"></div>
+        </div>
+
+        <div class="filter-row">
+          <input type="text" placeholder="Search companies..." id="classify-search" oninput="renderClassifyTable()" style="flex:1;min-width:160px;">
+          <select id="classify-filter-status" onchange="renderClassifyTable()">
+            <option value="">All status</option>
+            <option value="classified">Classified</option>
+            <option value="unclassified">Unclassified</option>
+            <option value="review">Needs Review</option>
+          </select>
+          <select id="classify-filter-city" onchange="renderClassifyTable()">
+            <option value="">All cities</option>
+          </select>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th><input type="checkbox" id="sel-all" onchange="toggleSelectAll(this)"></th>
+                <th>Company Name</th>
+                <th>City / GIDC</th>
+                <th>Industry</th>
+                <th>Confidence</th>
+                <th>Services Tagged</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="classify-tbody"></tbody>
+          </table>
+        </div>
+        <div id="classify-empty" class="empty-state"><div class="empty-icon">🤖</div><p>Upload company data first to classify</p></div>
+      </div>
+    </div>
+
+    <!-- DATABASE PAGE -->
+    <div class="page" id="page-database">
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+          <div>
+            <div class="card-title">Master Company Database</div>
+            <div class="card-sub">All companies with full classification and service tags</div>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-sm" onclick="exportDB()">⬇ Export Excel</button>
+            <button class="btn btn-primary btn-sm" onclick="showModal('add-modal')">+ Add Company</button>
+          </div>
+        </div>
+
+        <div class="filter-row">
+          <input type="text" placeholder="Search..." id="db-search" oninput="renderDBTable()" style="flex:1;min-width:160px;">
+          <select id="db-filter-industry" onchange="renderDBTable()">
+            <option value="">All industries</option>
+          </select>
+          <select id="db-filter-city" onchange="renderDBTable()">
+            <option value="">All cities</option>
+          </select>
+          <select id="db-filter-customer" onchange="renderDBTable()">
+            <option value="">All leads</option>
+            <option value="Y">Existing customers</option>
+            <option value="N">New leads</option>
+          </select>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Company Name</th>
+                <th>GIDC / City</th>
+                <th>Industry</th>
+                <th>Contact</th>
+                <th>Email</th>
+                <th>Services</th>
+                <th>Customer</th>
+                <th>Lead Score</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="db-tbody"></tbody>
+          </table>
+        </div>
+        <div id="db-empty" class="empty-state"><div class="empty-icon">🗄️</div><p>No companies yet. Upload Excel files to get started.</p></div>
+      </div>
+    </div>
+
+    <!-- BULK REVIEW PAGE -->
+    <div class="page" id="page-bulkreview">
+      <div class="card" style="margin-bottom:16px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <div>
+            <div class="card-title">🔍 Bulk Review — Auto (Gemini) + Manual</div>
+            <div class="card-sub">Let Gemini search Google for you, or search manually yourself — either way, you confirm before saving</div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn btn-sm" onclick="exportReviewList()">⬇ Export List</button>
+            <button class="btn btn-sm" onclick="saveAllReviews()">💾 Save All Changes</button>
+          </div>
+        </div>
+
+        <!-- GEMINI API KEY PANEL -->
+        <div style="background:var(--gray-50);border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px;margin-bottom:14px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+            <div style="flex:1;min-width:260px;">
+              <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:4px;">🔑 Gemini API Key <span id="gemini-key-status" class="badge badge-red" style="font-size:10px;">Not set</span></div>
+              <div style="font-size:11px;color:var(--text-3);">Free key from <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a>. Stored only in this browser, never sent anywhere but Google.</div>
+            </div>
+            <div style="display:flex;gap:6px;align-items:center;">
+              <input type="password" id="gemini-key-input" placeholder="Paste Gemini API key..." onkeydown="if(event.key==='Enter') saveGeminiKey();" style="padding:7px 11px;border-radius:var(--radius);border:1px solid var(--border);font-size:12px;width:220px;">
+              <button class="btn btn-sm" onclick="saveGeminiKey()">Save Key</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- AUTO-SEARCH ACTIONS -->
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
+          <button class="btn btn-primary btn-sm" id="btn-gemini-all" onclick="geminiReviewAll(false)">✨ Auto-Search All (Gemini)</button>
+          <button class="btn btn-sm" id="btn-gemini-selected" onclick="geminiReviewSelected()">✨ Auto-Search Selected</button>
+          <button class="btn btn-sm" title="Ignore previous results and re-search every Manual Review company again" onclick="geminiReviewAll(true)">↻ Redo All</button>
+          <button class="btn btn-sm" id="btn-gemini-stop" onclick="stopGeminiReview()" style="border-color:var(--red-400);color:var(--red-800);display:none;">⏹ Stop</button>
+          <button class="btn btn-primary btn-sm" id="btn-search-next" onclick="searchNextCompany()">🔍 Search Next Manually</button>
+        </div>
+
+        <!-- GEMINI REVIEW PROGRESS -->
+        <div id="gemini-review-progress" style="display:none;margin-bottom:14px;">
+          <div style="background:var(--gray-900);border-radius:var(--radius);padding:14px 16px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+              <span style="font-size:12px;font-weight:600;color:var(--green-200);">✨ Gemini is searching Google for each company...</span>
+              <span style="font-size:12px;color:var(--gray-200);" id="gemini-review-count">0 / 0</span>
+            </div>
+            <div class="progress-bar-wrap" style="margin-bottom:8px;"><div class="progress-bar" id="gemini-review-bar" style="width:0%"></div></div>
+            <div class="ai-log" id="gemini-review-log" style="max-height:160px;"></div>
+          </div>
+        </div>
+
+        <!-- REVIEW SESSION STATUS (manual search) -->
+        <div id="review-session-status" style="display:none;margin-bottom:14px;">
+          <div style="background:var(--green-50);border:1px solid var(--green-100);border-radius:var(--radius);padding:10px 16px;font-size:12px;color:var(--green-800);">
+            <span id="review-session-text"></span>
+          </div>
+        </div>
+
+        <!-- HOW IT WORKS BANNER -->
+        <div style="background:var(--blue-50);border:1px solid var(--blue-100);border-radius:var(--radius);padding:12px 16px;margin-bottom:14px;">
+          <div style="font-size:12px;font-weight:600;color:var(--blue-800);margin-bottom:6px;">How this page works</div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;">
+            <div style="font-size:11px;color:var(--blue-800);"><strong>Step 1</strong> — Paste a free Gemini key above (once), then click "Auto-Search All"</div>
+            <div style="font-size:11px;color:var(--blue-800);"><strong>Step 2</strong> — Gemini searches Google for each company and fills in its best-guess industry + notes</div>
+            <div style="font-size:11px;color:var(--blue-800);"><strong>Step 3</strong> — Skim each row — override the dropdown (Ctrl/Cmd-click the box below it if a company spans more than one industry, e.g. textile + chemical), edit notes, or search manually with 🔍</div>
+            <div style="font-size:11px;color:var(--blue-800);"><strong>Step 4</strong> — Click "Save All Changes" to approve everything at once</div>
+          </div>
+        </div>
+
+        <div class="filter-row">
+          <input type="text" id="review-search" placeholder="Search companies..." oninput="renderBulkReview()" style="flex:1;">
+          <select id="review-filter" onchange="renderBulkReview()">
+            <option value="review">Manual Review only</option>
+            <option value="othr">OTHR / Others</option>
+            <option value="all">All companies</option>
+          </select>
+          <span id="review-count" class="badge badge-amber">0 to review</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:32px;"><input type="checkbox" id="bulk-sel-all" onchange="toggleBulkSelectAll(this)"></th>
+                <th>Company Name</th>
+                <th>City / GIDC</th>
+                <th>Current</th>
+                <th style="width:150px;">Research</th>
+                <th style="width:190px;">Industry (primary + also applies to)</th>
+                <th>Notes (Gemini's or yours)</th>
+              </tr>
+            </thead>
+            <tbody id="bulk-review-tbody"></tbody>
+          </table>
+        </div>
+        <div id="bulk-review-empty" class="empty-state" style="display:none;">
+          <div class="empty-icon">✅</div><p>No companies need review — all classified!</p>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;" id="bulk-action-bar">
+          <select id="bulk-assign-industry" style="padding:7px 11px;border-radius:var(--radius);border:1px solid var(--border);font-size:13px;">
+            <option value="">Bulk assign selected to...</option>
+          </select>
+          <button class="btn btn-sm" onclick="bulkAssignIndustry()">Apply to Selected</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CAMPAIGNS PAGE -->
+    <div class="page" id="page-campaigns">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+        <div>
+          <div style="font-size:15px;font-weight:600;">Email Campaigns</div>
+          <div class="text-muted">Segment your database and track targeted outreach</div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="showModal('campaign-modal')">+ New Campaign</button>
+      </div>
+
+      <div class="tabs">
+        <div class="tab active" onclick="switchCampaignTab('active',this)">Active</div>
+        <div class="tab" onclick="switchCampaignTab('completed',this)">Completed</div>
+        <div class="tab" onclick="switchCampaignTab('draft',this)">Drafts</div>
+      </div>
+
+      <div id="campaigns-list">
+        <div class="empty-state"><div class="empty-icon">📧</div><p>No campaigns yet. Create your first campaign to start outreach.</p></div>
+      </div>
+
+      <div class="card" style="margin-top:20px;">
+        <div class="card-title">Segment Builder</div>
+        <div class="card-sub" style="margin-bottom:14px;">Build a targeted list from your classified database</div>
+        <div class="filter-row">
+          <select id="seg-industry">
+            <option value="">Any industry</option>
+          </select>
+          <select id="seg-service">
+            <option value="">Any service need</option>
+            <option value="Solar EPC">Solar EPC</option>
+            <option value="Energy Audit">Energy Audit</option>
+            <option value="Rainwater Harvesting">Rainwater Harvesting</option>
+            <option value="Water Audit">Water Audit</option>
+            <option value="ETP Optimization">ETP Optimization</option>
+            <option value="ZLD Feasibility">ZLD Feasibility</option>
+            <option value="ESG Reporting">ESG Reporting</option>
+            <option value="Carbon Credits">Carbon Credits</option>
+          </select>
+          <select id="seg-customer">
+            <option value="">Any type</option>
+            <option value="N">New leads only</option>
+            <option value="Y">Existing customers</option>
+          </select>
+          <button class="btn btn-primary btn-sm" onclick="buildSegment()">Build Segment</button>
+        </div>
+        <div id="segment-result"></div>
+      </div>
+    </div>
+
+  </div><!-- end content -->
+</div><!-- end main -->
+
+<!-- ADD COMPANY MODAL -->
+<div class="modal-overlay" id="add-modal">
+  <div class="modal">
+    <div class="modal-title">Add Company Manually</div>
+    <div class="form-row">
+      <label class="form-label">Company Name *</label>
+      <input type="text" class="form-input" id="add-name" placeholder="e.g. Shree Ram Chemicals Pvt Ltd">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div class="form-row">
+        <label class="form-label">GIDC / Area</label>
+        <input type="text" class="form-input" id="add-gidc" placeholder="e.g. Ankleshwar GIDC">
+      </div>
+      <div class="form-row">
+        <label class="form-label">City / District</label>
+        <input type="text" class="form-input" id="add-city" placeholder="e.g. Bharuch">
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div class="form-row">
+        <label class="form-label">Email</label>
+        <input type="email" class="form-input" id="add-email" placeholder="contact@company.com">
+      </div>
+      <div class="form-row">
+        <label class="form-label">Phone</label>
+        <input type="text" class="form-input" id="add-phone" placeholder="+91 98765 43210">
+      </div>
+    </div>
+    <div class="form-row">
+      <label class="form-label">Website</label>
+      <input type="text" class="form-input" id="add-website" placeholder="www.company.com">
+    </div>
+    <div class="form-row">
+      <label class="form-label">Existing Customer?</label>
+      <select class="form-input" id="add-customer">
+        <option value="N">No — New Lead</option>
+        <option value="Y">Yes — Existing Customer</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-sm" onclick="hideModal('add-modal')">Cancel</button>
+      <button class="btn btn-primary btn-sm" onclick="addCompanyManual()">Add Company</button>
+    </div>
+  </div>
+</div>
+
+<!-- CAMPAIGN MODAL -->
+<div class="modal-overlay" id="campaign-modal">
+  <div class="modal">
+    <div class="modal-title">Create New Campaign</div>
+    <div class="form-row">
+      <label class="form-label">Campaign Name *</label>
+      <input type="text" class="form-input" id="camp-name" placeholder="e.g. Solar EPC — Chemical Sector Q3">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div class="form-row">
+        <label class="form-label">Target Industry</label>
+        <select class="form-input" id="camp-industry">
+          <option value="">All industries</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label class="form-label">Service Focus</label>
+        <select class="form-input" id="camp-service">
+          <option value="">All services</option>
+          <option>Solar EPC</option><option>Energy Audit</option><option>Rainwater Harvesting</option>
+          <option>ETP Optimization</option><option>ZLD Feasibility</option><option>ESG Reporting</option><option>Carbon Credits</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <label class="form-label">Email Subject Line</label>
+      <input type="text" class="form-input" id="camp-subject" placeholder="e.g. Reduce your energy costs by 30% — Free Audit">
+    </div>
+    <div class="form-row">
+      <label class="form-label">Scheduled Date</label>
+      <input type="date" class="form-input" id="camp-date">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-sm" onclick="hideModal('campaign-modal')">Cancel</button>
+      <button class="btn btn-primary btn-sm" onclick="createCampaign()">Create Campaign</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast-wrap" id="toast-wrap"></div>
+
+<script>
+// ===================== STATE =====================
+let DB = JSON.parse(localStorage.getItem('revive_db') || '[]');
+let campaigns = JSON.parse(localStorage.getItem('revive_campaigns') || '[]');
+let uploadedFiles = JSON.parse(localStorage.getItem('revive_files') || '[]');
+let rawUploadData = [];
+
+const INDUSTRY_CODES = {
+  'CHEM': 'Chemicals', 'PHAR': 'Pharmaceuticals', 'TEXT': 'Textile & Dyeing',
+  'PACK': 'Packaging', 'PLAS': 'Plastics', 'FOOD': 'Food Processing',
+  'BEV': 'Beverage', 'ENGG': 'Engineering', 'AUTO': 'Auto Components',
+  'METL': 'Metal Processing', 'FOUN': 'Foundry', 'CERA': 'Ceramics',
+  'GLAS': 'Glass', 'PAPER': 'Paper & Pulp', 'FMCG': 'FMCG Manufacturing',
+  'ELEC': 'Electrical / Electronics', 'RUBB': 'Rubber', 'CEMT': 'Cement',
+  'LOGI': 'Logistics & Warehousing', 'REAL': 'Real Estate', 'OTHR': 'Others'
+};
+
+const KEYWORD_MAP = {
+  'CHEM': ['chemical','chem','petro','solvent','acid','alkali','polymer','resin','pigment','dye stuff','colour','colorant','reagent','catalyst','adhesive','coating','paint','varnish','ink','lubric','grease','wax','paraffin','chlor','sulph','nitro','phosph','fluor','bromo','iodo','perox','carbide','silica','zeolite','surfactant','detergent raw','intermediate','fine chem','specialty chem','agrochem','pesticid','herbicid','insecticid','fungicid'],
+  'PHAR': ['pharma','pharmaceutical','drug','medicine','biotech','api','lifescience','life science','tablet','capsule','injection','syrup','ointment','bulk drug','active ingredient','formulation','nutraceutical','herbal','ayurved','biochem','diagnostics','lab reagent','hospital supply','medical device','surgical'],
+  'TEXT': ['textile','tex','dyeing','fabric','yarn','weav','knit','garment','apparel','colour','embroid','lace','saree','denim','cotton','polyester','nylon','silk','wool','jute','fiber','fibre','spinning','winding','sizing','bleach','printing','finishing','process house','hosiery','socks','towel','bedsheet','home textile'],
+  'PACK': ['packag','container','carton','wrapper','label','pouch','sachet','blister','laminate','flexibl','rigid pack','corrugat','box','bag','sack','drum','barrel','can','tin','jar','vial','ampoule','crate','pallet','tray'],
+  'PLAS': ['plastic','plas','hdpe','ldpe','lldpe','pp','pvc','pet','abs','nylon','acrylic','polycarbonate','polystyren','polyurethane','poly','mould','injection mould','blow mould','extrusion','compounding','masterbatch','pipe','fitting','sheet','film','foam','recycl'],
+  'FOOD': ['food','agro','agri','spice','flour','oil','rice','dairy','snack','biscuit','masala','pickle','sauce','jam','bakery','confection','chocolat','noodle','pasta','cereal','pulse','lentil','wheat','maize','soybean','groundnut','mustard','coconut','palm','sunflower','salt','sugar','honey','vinegar','ketchup','ready to eat','frozen','dehydrat','extruded'],
+  'BEV': ['beverage','drink','juice','soft drink','beer','liquor','alcohol','water','mineral water','aerated','carbonated','energy drink','tea','coffee','milk','shake'],
+  'ENGG': ['engineer','engg','machine','machinery','equipment','fabricat','pump','valve','tool','component','precision','jig','fixture','press','lathe','cnc','milling','grinding','welding','forging','casting component','heat exchanger','vessel','tank','reactor','agitator','conveyor','crane','hoist','compressor','blower','fan','filter','separator','dryer','boiler','furnace','oven','cooler','chiller','hydraulic','pneumatic','gear','shaft','coupling','bearing','spring','fastener','bolt','nut','screw'],
+  'AUTO': ['auto','vehicle','car','truck','motor','tyre','brake','gear','bearing','suspension','radiator','bumper','dashboard','seat','mirror','exhaust','muffler','clutch','axle','rim','wheel','lamp','horn','battery','alternator','starter','wiper','auto component','auto ancillary','two wheeler','three wheeler','commercial vehicle'],
+  'METL': ['metal','steel','iron','alumin','copper','zinc','brass','bronze','nickel','titanium','stainless','galvan','roll','wire','pipe','tube','rod','bar','angle','channel','beam','sheet','plate','coil','strip','structural steel','alloy','casting','forging','extrusion','drawing'],
+  'FOUN': ['foundry','casting','forging','die cast','sand cast','investment cast','lost wax','pattern','mould making','gray iron','ductile iron','malleable','non ferrous cast'],
+  'CERA': ['ceramic','tiles','sanitaryware','refractory','brick','kiln','pottery','stoneware','porcelain','chinaware','insulat','abrasive','alumina','zirconia','silicon carbide','fire clay','floor tile','wall tile','vitrified'],
+  'GLAS': ['glass','mirror','fibre glass','float glass','borosilicate','tempered glass','laminated glass','glass bottle','glass container','optical','lens'],
+  'PAPER': ['paper','pulp','cardboard','board','tissue','kraft','duplex','newsprint','writing paper','coated paper','specialty paper','stationery'],
+  'FMCG': ['fmcg','consumer','personal care','soap','detergent','shampoo','conditioner','toothpaste','toothbrush','razor','cream','lotion','perfume','deodorant','cleaning','housekeeping','phenyl','bleach','floor cleaner','dishwash','laundry','cosmetic','makeup','lipstick','nail polish','baby product'],
+  'ELEC': ['electric','electron','wire','cable','switch','circuit','led','solar','motor','transformer','capacitor','resistor','pcb','semiconductor','sensor','relay','contactor','mcb','mccb','panel','switchgear','ups','inverter','battery','charger','generator','alternator','lighting','luminaire','appliance','ac','refrigerator','washing machine','pump motor','control panel','automation','plc','scada','instrument','meter','transducer'],
+  'RUBB': ['rubber','gasket','seal','hose','o-ring','diaphragm','bellows','conveyor belt','rubber sheet','foam rubber','sponge','latex','silicone','viton','nitrile'],
+  'CEMT': ['cement','concrete','ready mix','rmc','fly ash brick','aac block','autoclaved','mortar','grout','plaster','gypsum','lime','calcium silicate','construction chemical'],
+  'LOGI': ['logistic','transport','warehouse','freight','courier','cargo','supply chain','shipping','forwarding','clearing','customs','cold storage','distribution','fleet','tanker'],
+  'REAL': ['real estate','developer','construction','builder','infrastructure','housing','township','colony','apartment','commercial complex','mall','office park','industrial park','sez']
+};
+
+const SERVICE_MAP = {
+  'CHEM': ['Solar EPC','Energy Audit','ETP Optimization','Wastewater Reuse','ZLD Feasibility','Carbon Footprint Assessment','Carbon Credits'],
+  'PHAR': ['Solar EPC','Energy Audit','ETP Optimization','Water Audit','Sustainability Reporting','ESG Reporting','Carbon Credits'],
+  'TEXT': ['Solar EPC','ETP Optimization','Wastewater Reuse','ZLD Feasibility','Water Audit','Energy Efficiency'],
+  'PACK': ['Solar EPC','Energy Audit','Energy Efficiency','Carbon Footprint Assessment'],
+  'PLAS': ['Solar EPC','Energy Audit','Energy Efficiency','Carbon Footprint Assessment'],
+  'FOOD': ['Solar EPC','Rainwater Harvesting','Water Audit','Energy Audit','Sustainability Reporting'],
+  'BEV': ['Solar EPC','Rainwater Harvesting','Water Audit','Energy Audit','Wastewater Reuse'],
+  'ENGG': ['Solar EPC','Energy Audit','Energy Efficiency'],
+  'AUTO': ['Solar EPC','Energy Audit','Carbon Footprint Assessment','ESG Reporting'],
+  'METL': ['Solar EPC','Energy Audit','Energy Efficiency','Carbon Credits'],
+  'FOUN': ['Solar EPC','Energy Audit','Energy Efficiency'],
+  'CERA': ['Solar EPC','Energy Audit','Energy Efficiency'],
+  'GLAS': ['Solar EPC','Energy Audit','Energy Efficiency'],
+  'PAPER': ['Solar EPC','Energy Audit','Water Audit','Wastewater Reuse','ETP Optimization'],
+  'FMCG': ['Solar EPC','Energy Audit','Sustainability Reporting','ESG Reporting','Carbon Credits'],
+  'ELEC': ['Solar EPC','Energy Audit','Energy Efficiency'],
+  'RUBB': ['Solar EPC','Energy Audit','ETP Optimization'],
+  'CEMT': ['Solar EPC','Energy Audit','Carbon Footprint Assessment','Carbon Credits'],
+  'LOGI': ['Solar EPC','Energy Audit','Carbon Footprint Assessment'],
+  'REAL': ['Solar EPC','Rainwater Harvesting','Green Building Consulting','Energy Audit'],
+  'OTHR': ['Solar EPC','Energy Audit']
+};
+
+function clearAllData() {
+  if (!confirm('This will delete ALL imported companies and classification data. Are you sure?')) return;
+  DB = []; campaigns = []; uploadedFiles = [];
+  localStorage.removeItem('revive_db'); localStorage.removeItem('revive_campaigns'); localStorage.removeItem('revive_files');
+  updateBadge(); renderDashboard();
+  document.getElementById('uploaded-files-card').style.display = 'none';
+  document.getElementById('upload-preview').style.display = 'none';
+  toast('🗑 All data cleared. Upload fresh files now.');
+}
+
+function saveDB() { localStorage.setItem('revive_db', JSON.stringify(DB)); localStorage.setItem('revive_campaigns', JSON.stringify(campaigns)); localStorage.setItem('revive_files', JSON.stringify(uploadedFiles)); }
+
+// ===================== NAV =====================
+const PAGE_META = {
+  'dashboard': { title: 'Dashboard', sub: 'Overview of your lead intelligence system' },
+  'upload': { title: 'Upload Data', sub: 'Import Excel files from your city databases' },
+  'classify': { title: 'AI Classify', sub: 'Auto-classify companies by industry using AI' },
+  'database': { title: 'Master Database', sub: 'All companies, classifications, and service tags' },
+  'campaigns': { title: 'Email Campaigns', sub: 'Segment and track your outreach campaigns' },
+  'bulkreview': { title: 'Bulk Review', sub: 'Fix all Manual Review companies in one place — fast' }
+};
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => { if (n.getAttribute('onclick') && n.getAttribute('onclick').includes(id)) n.classList.add('active'); });
+  const meta = PAGE_META[id] || {};
+  document.getElementById('topbar-title').textContent = meta.title || id;
+  document.getElementById('topbar-sub').textContent = meta.sub || '';
+  if (id === 'dashboard') renderDashboard();
+  if (id === 'classify') { renderClassifyTable(); refreshCityFilters(); }
+  if (id === 'database') { renderDBTable(); refreshDBFilters(); }
+  if (id === 'campaigns') { renderCampaigns(); refreshCampaignIndustries(); refreshSegIndustries(); }
+  if (id === 'bulkreview') { renderBulkReview(); }
+}
+
+// ===================== UPLOAD =====================
+// Bug fix: previously, every time the file picker fired (or if the user
+// uploaded files in two separate clicks instead of selecting them all at
+// once in the same dialog), `rawUploadData` was wiped and reset to just the
+// newest selection — so a second upload silently threw away the first one.
+// Files now accumulate here until you click "Import to Database" (which
+// clears the queue for the next batch) or "Clear staged files".
+function handleFiles(e) {
+  processFiles(e.target.files);
+  e.target.value = ''; // allow re-selecting the same file(s) again later
+}
+
+// Real drag-and-drop support (the upload zone said "drop your files here"
+// but had no drop handler at all before — clicking to browse was the only
+// thing that worked).
+const uploadZoneEl = document.getElementById('upload-zone');
+if (uploadZoneEl) {
+  uploadZoneEl.addEventListener('dragover', (e) => { e.preventDefault(); uploadZoneEl.classList.add('drag-over'); });
+  uploadZoneEl.addEventListener('dragleave', () => uploadZoneEl.classList.remove('drag-over'));
+  uploadZoneEl.addEventListener('drop', (e) => {
+    e.preventDefault();
+    uploadZoneEl.classList.remove('drag-over');
+    if (e.dataTransfer?.files?.length) processFiles(e.dataTransfer.files);
+  });
+}
+
+function processFiles(fileList) {
+  const files = Array.from(fileList);
+  if (!files.length) return;
+  // Skip files that are already staged (same name + size) so double-adding is harmless
+  const newFiles = files.filter(f => !rawUploadData.some(existing => existing.fileName === f.name && existing.fileSize === f.size));
+  if (!newFiles.length) { if (files.length) toast('Those file(s) are already staged below'); return; }
+
+  let pending = newFiles.length;
+  const done = () => { if (--pending === 0) showPreview(); };
+  newFiles.forEach(f => {
+    if (f.name.toLowerCase().endsWith('.pdf')) readPDF(f, done);
+    else readExcel(f, done);
+  });
+}
+
+function removeStagedFile(fileName, fileSize) {
+  rawUploadData = rawUploadData.filter(f => !(f.fileName === fileName && f.fileSize === fileSize));
+  if (rawUploadData.length) showPreview();
+  else { document.getElementById('upload-preview').style.display = 'none'; toast('All staged files removed'); }
+}
+
+function clearStagedFiles() {
+  rawUploadData = [];
+  document.getElementById('upload-preview').style.display = 'none';
+  toast('Staged files cleared');
+}
+
+async function readPDF(file, done) {
+  toast('📄 Reading PDF — extracting company data...');
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    if (typeof pdfjsLib === 'undefined') { toast('❌ PDF library not loaded. Try refreshing.'); done(); return; }
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    let fullText = '';
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const tc = await page.getTextContent();
+      fullText += tc.items.map(item => item.str).join(' ') + '\n';
+    }
+    // Parse extracted text into company rows
+    const rows = parsePDFText(fullText, file.name);
+    rawUploadData.push({ name: file.name, fileName: file.name, fileSize: file.size, rows, isPDF: true });
+    toast(`✅ PDF read — found ${rows.length} companies`);
+  } catch(e) {
+    toast('❌ Could not read PDF: ' + e.message);
+  }
+  done();
+}
+
+function parsePDFText(text, filename) {
+  // Strategy: split into lines, find lines that look like company names
+  const lines = text.split(/\n|\r/).map(l => l.trim()).filter(l => l.length > 3);
+  const rows = [];
+  const companyPattern = /(?:pvt|ltd|private|limited|industries|enterprise|traders|corporation|company|co\.?|llp|works|mfg|manufacturing|exports|imports|chemicals|pharma|textile|packaging|plastics|foods|engineering|auto|metals|ceramics|rubber|cement)/i;
+  const skipPattern = /^(sr|s\.?n|no\.|page|total|address|phone|email|website|district|gidc|taluka|\d+)$/i;
+
+  let currentCompany = null;
+  lines.forEach(line => {
+    // Skip header-like lines
+    if (skipPattern.test(line.trim())) return;
+    if (/^\d+\.?\s*$/.test(line)) return; // pure serial number
+
+    // Line looks like a company name
+    if (companyPattern.test(line) || (line.length > 8 && line.length < 120 && /[A-Z]/.test(line[0]))) {
+      if (currentCompany) rows.push(currentCompany);
+      currentCompany = { 'Company Name': line, 'Source': filename };
+    } else if (currentCompany) {
+      // Try to extract email, phone, website from following lines
+      if (/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/.test(line)) {
+        currentCompany['Email'] = line.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/)?.[0] || '';
+      } else if (/\d{10}/.test(line.replace(/\s/g,''))) {
+        currentCompany['Phone'] = line.match(/\d[\d\s\-]{9,}/)?.[0]?.trim() || '';
+      } else if (/www\.|http|\.com|\.in/.test(line)) {
+        currentCompany['Website'] = line.match(/(?:https?:\/\/|www\.)[^\s]+/)?.[0] || line.trim();
+      } else if (line.length < 60 && !currentCompany['GIDC']) {
+        currentCompany['GIDC'] = line;
+      }
+    }
+  });
+  if (currentCompany) rows.push(currentCompany);
+  return rows.filter(r => r['Company Name'] && r['Company Name'].length > 3);
+}
+
+function readExcel(file, done) {
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const wb = XLSX.read(ev.target.result, { type: 'array' });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
+    rawUploadData.push({ name: file.name, fileName: file.name, fileSize: file.size, rows });
+    if (done) done();
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function showPreview() {
+  if (!rawUploadData.length) return;
+  const allRows = rawUploadData.flatMap(f => f.rows);
+  // Merge column names across every staged file (not just the first file's first
+  // row) so a second file with a differently-named company column still shows up.
+  const cols = [...new Set(rawUploadData.flatMap(f => Object.keys(f.rows[0] || {})))];
+  document.getElementById('upload-preview').style.display = 'block';
+
+  // Staged-files summary — makes it obvious multiple files really are combined,
+  // and lets you remove one before importing if something got added by mistake.
+  const filesList = document.getElementById('staged-files-list');
+  if (filesList) {
+    filesList.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:8px;">
+        <div style="font-size:12px;font-weight:600;color:var(--text);">📎 ${rawUploadData.length} file${rawUploadData.length>1?'s':''} staged — ${allRows.length} total rows</div>
+        <div style="display:flex;gap:6px;">
+          <button class="btn btn-sm" onclick="document.getElementById('file-input').click()">＋ Add more files</button>
+          <button class="btn btn-sm" style="border-color:var(--red-400);color:var(--red-800);" onclick="clearStagedFiles()">✕ Clear all</button>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:14px;">
+        ${rawUploadData.map(f => `
+          <div style="display:flex;align-items:center;justify-content:space-between;background:var(--surface-2);border-radius:8px;padding:6px 10px;font-size:12px;">
+            <span>📄 ${f.fileName} <span style="color:var(--text-3);">— ${f.rows.length} rows</span></span>
+            <button onclick="removeStagedFile('${f.fileName.replace(/'/g,"\\'")}', ${f.fileSize})" style="background:none;border:none;cursor:pointer;color:var(--red-400);font-size:13px;" title="Remove this file">✕</button>
+          </div>`).join('')}
+      </div>`;
+  }
+
+  // Detect best column for company name - show dropdown so user can confirm
+  const guessNameCol = cols.find(c => {
+    const cl = c.toLowerCase();
+    return (cl.includes('company') || cl === 'name' || cl.includes('firm') || cl.includes('organisation') || cl.includes('organization') || cl.includes('unit name') || cl.includes('factory'))
+      && !cl.includes('sr') && !cl.includes('no') && !cl.includes('serial');
+  }) || cols.find(c => !c.toLowerCase().includes('sr') && !c.toLowerCase().includes('no') && isNaN(Number(allRows[0]?.[c])));
+
+  const mapper = document.getElementById('column-mapper');
+  mapper.innerHTML = `
+    <div style="background:var(--amber-50);border:1px solid var(--amber-100);border-radius:var(--radius);padding:14px 16px;margin-bottom:14px;">
+      <div style="font-size:13px;font-weight:600;color:var(--amber-600);margin-bottom:8px;">⚠️ Tell us which column has Company Names</div>
+      <div style="font-size:12px;color:var(--amber-600);margin-bottom:10px;">Found ${cols.length} distinct columns across your staged file(s). Select the one that contains company names so we don't accidentally read serial numbers.</div>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <label style="font-size:13px;font-weight:500;">Company Name column:</label>
+        <select id="name-col-picker" style="padding:6px 10px;border-radius:8px;border:1px solid var(--border);font-size:13px;background:var(--surface);">
+          ${cols.map(c => `<option value="${c}" ${c===guessNameCol?'selected':''}>${c}</option>`).join('')}
+        </select>
+        <span style="font-size:12px;color:var(--amber-600);">Sample: <strong id="name-col-sample">${String(allRows[0]?.[guessNameCol]||'').slice(0,40)}</strong></span>
+      </div>
+    </div>
+    <div style="font-size:12px;color:var(--text-3);margin-bottom:8px;">All columns found: ${cols.map(c=>`<code style="background:var(--surface-2);padding:1px 5px;border-radius:4px;margin:1px;">${c}</code>`).join(' ')}</div>`;
+
+  document.getElementById('name-col-picker').addEventListener('change', function() {
+    document.getElementById('name-col-sample').textContent = String(allRows[0]?.[this.value]||'').slice(0,40);
+  });
+
+  // Preview table — all columns
+  const tbl = document.getElementById('preview-table');
+  tbl.innerHTML = `<thead><tr>${cols.slice(0,8).map(c => `<th>${c}</th>`).join('')}${cols.length>8?'<th>…</th>':''}</tr></thead><tbody>${allRows.slice(0,5).map(r => `<tr>${cols.slice(0,8).map(c => `<td>${String(r[c]||'').slice(0,28)}</td>`).join('')}${cols.length>8?'<td>…</td>':''}</tr>`).join('')}</tbody>`;
+}
+
+function importData() {
+  if (!rawUploadData.length) return;
+  const nameColPicker = document.getElementById('name-col-picker');
+  const selectedNameCol = nameColPicker ? nameColPicker.value : null;
+
+  let added = 0, skippedBlank = 0, skippedDupe = 0, skippedSerial = 0;
+  let idCounter = Date.now();
+
+  rawUploadData.forEach(file => {
+    file.rows.forEach(row => {
+      const cols = Object.keys(row);
+
+      // Smart get: tries exact match first, then partial, skips serial-number-like columns
+      const get = (...keys) => {
+        for (const k of keys) {
+          // Exact match (case-insensitive)
+          const exact = cols.find(c => c.toLowerCase() === k.toLowerCase());
+          if (exact) return String(row[exact]||'').trim();
+        }
+        for (const k of keys) {
+          // Partial match but skip sr/no/serial columns
+          const partial = cols.find(c => {
+            const cl = c.toLowerCase();
+            if (cl.includes('sr') || cl === 's.no' || cl === 'sr.no' || cl === 'serial' || cl === 'no.' || cl === '#') return false;
+            return cl.includes(k.toLowerCase());
+          });
+          if (partial) return String(row[partial]||'').trim();
+        }
+        return '';
+      };
+
+      // Use user-selected column for name, fallback to smart detection
+      let name = '';
+      if (selectedNameCol && row[selectedNameCol] !== undefined) {
+        name = String(row[selectedNameCol]||'').trim();
+      } else {
+        name = get('company name','company','firm name','firm','unit name','factory name','organisation','organization');
+      }
+
+      // Skip blank rows
+      if (!name) { skippedBlank++; return; }
+      // Skip pure serial numbers (only digits/dots)
+      if (/^[\d\.\s]+$/.test(name)) { skippedSerial++; return; }
+      // Soft duplicate check — only skip if name AND city both match exactly
+      const isDupe = DB.some(d =>
+        d.name.toLowerCase().trim() === name.toLowerCase().trim() &&
+        (d.city||'').toLowerCase() === (get('city','district','town','taluka')||'').toLowerCase()
+      );
+      if (isDupe) { skippedDupe++; return; }
+
+      DB.push({
+        id: ++idCounter + Math.random(),
+        name,
+        gidc: get('gidc','gidc name','area','zone'),
+        city: get('city','district','town','taluka'),
+        state: get('state') || 'Gujarat',
+        email: get('email','e-mail','mail id'),
+        phone: get('phone','mobile','contact no','tel','contact number','mob'),
+        website: get('website','web','url','site'),
+        contactPerson: get('contact person','person name','contact name','owner','proprietor'),
+        designation: get('designation','title','role','post'),
+        industryCode: '',
+        industryName: '',
+        subIndustry: '',
+        mainProducts: get('product','main product','goods','items'),
+        services: [],
+        confidence: 0,
+        existingCustomer: get('existing customer','customer','client') || 'N',
+        leadScore: '',
+        status: 'Unclassified',
+        notes: get('notes','remarks','comment','remark'),
+        source: file.name
+      });
+      added++;
+    });
+  });
+  saveDB();
+  document.getElementById('upload-preview').style.display = 'none';
+  const card = document.getElementById('uploaded-files-card');
+  card.style.display = 'block';
+  uploadedFiles = [...uploadedFiles, ...rawUploadData.map(f => ({ name: f.name, rows: f.rows.length, date: new Date().toLocaleDateString('en-IN') }))];
+  saveDB();
+  document.getElementById('uploaded-files-list').innerHTML = uploadedFiles.map(f => `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);"><span style="font-weight:500;">📄 ${f.name}</span><span class="text-muted">${f.rows} rows · ${f.date}</span></div>`).join('');
+  updateBadge();
+  const msg = `✅ ${added} imported | ⚠️ ${skippedDupe} duplicates | 🚫 ${skippedBlank + skippedSerial} blank/serial skipped`;
+  toast(msg);
+  // Show detailed report in upload area
+  const reportEl = document.getElementById('import-report');
+  if (reportEl) {
+    reportEl.innerHTML = `<div style="background:var(--green-50);border:1px solid var(--green-100);border-radius:var(--radius);padding:14px 16px;margin-top:12px;">
+      <div style="font-weight:600;font-size:13px;color:var(--green-800);margin-bottom:8px;">📊 Import Report</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
+        <div style="text-align:center;"><div style="font-size:22px;font-weight:700;color:var(--green-800);">${added}</div><div style="font-size:11px;color:var(--green-600);">Imported</div></div>
+        <div style="text-align:center;"><div style="font-size:22px;font-weight:700;color:var(--amber-400);">${skippedDupe}</div><div style="font-size:11px;color:var(--text-3);">Duplicates skipped</div></div>
+        <div style="text-align:center;"><div style="font-size:22px;font-weight:700;color:var(--gray-400);">${skippedBlank}</div><div style="font-size:11px;color:var(--text-3);">Blank rows skipped</div></div>
+        <div style="text-align:center;"><div style="font-size:22px;font-weight:700;color:var(--gray-400);">${skippedSerial}</div><div style="font-size:11px;color:var(--text-3);">Serial nos. skipped</div></div>
+      </div>
+      ${skippedDupe > 0 ? '<div style="font-size:11px;color:var(--amber-600);margin-top:8px;">ℹ️ Duplicates = same company name AND city already in DB. Different cities with same name are kept.</div>' : ''}
+    </div>`;
+    reportEl.style.display = 'block';
+  }
+  rawUploadData = [];
+}
+
+// ===================== CLASSIFY =====================
+// GIDC location → likely industry map (strong prior knowledge)
+function getGIDCBoost(location, industryCode) {
+  const loc = location.toLowerCase();
+  const boostMap = {
+    'ankleshwar': { codes: ['CHEM','PHAR'], boost: 20 },
+    'panoli':     { codes: ['CHEM','PHAR'], boost: 20 },
+    'jhagadia':   { codes: ['CHEM','PHAR'], boost: 18 },
+    'vapi':       { codes: ['CHEM','TEXT','PACK'], boost: 18 },
+    'vatva':      { codes: ['CHEM','TEXT','PACK','PLAS'], boost: 16 },
+    'naroda':     { codes: ['CHEM','TEXT'], boost: 16 },
+    'surat':      { codes: ['TEXT','PACK','FOOD'], boost: 16 },
+    'sachin':     { codes: ['TEXT','PACK','PLAS'], boost: 15 },
+    'morbi':      { codes: ['CERA','ENGG'], boost: 20 },
+    'rajkot':     { codes: ['ENGG','AUTO','METL'], boost: 16 },
+    'gondal':     { codes: ['ENGG','AUTO'], boost: 14 },
+    'halol':      { codes: ['AUTO','ENGG'], boost: 16 },
+    'sanand':     { codes: ['AUTO','ENGG','FOOD'], boost: 15 },
+    'changodar':  { codes: ['CHEM','PLAS','PACK'], boost: 15 },
+    'savli':      { codes: ['CHEM','ENGG'], boost: 14 },
+    'vadodara':   { codes: ['CHEM','ENGG','PHAR'], boost: 12 },
+    'bharuch':    { codes: ['CHEM','PHAR','ENGG'], boost: 12 },
+    'mehsana':    { codes: ['FOOD','ENGG','AUTO'], boost: 12 },
+    'ahmedabad':  { codes: ['TEXT','CHEM','PACK','PLAS','ENGG'], boost: 10 },
+    'unjha':      { codes: ['FOOD','PHAR'], boost: 16 },
+    'himmatnagar':{ codes: ['METL','ENGG'], boost: 14 },
+    'bhavnagar':  { codes: ['CHEM','ENGG','METL'], boost: 12 },
+    'junagadh':   { codes: ['FOOD','ENGG'], boost: 12 },
+    'gandhidham': { codes: ['LOGI','PACK'], boost: 14 },
+  };
+  for (const [city, data] of Object.entries(boostMap)) {
+    if (loc.includes(city) && data.codes.includes(industryCode)) return data.boost;
+  }
+  return 0;
+}
+
+function classifyByName(name) {
+  const n = name.toLowerCase();
+  // Try longest keyword match first for better accuracy
+  let bestMatch = null, bestLen = 0;
+  for (const [code, keywords] of Object.entries(KEYWORD_MAP)) {
+    for (const kw of keywords) {
+      if (n.includes(kw) && kw.length > bestLen) {
+        bestLen = kw.length;
+        bestMatch = { code, name: INDUSTRY_CODES[code], confidence: 75 + Math.min(20, kw.length * 2) };
+      }
+    }
+  }
+  if (bestMatch) return bestMatch;
+  return { code: 'OTHR', name: 'Others', confidence: 35 + Math.floor(Math.random() * 20) };
+}
+
+// ── METHOD 2: Gemini live web search (Google) — works from a plain browser ──
+// This used to call Anthropic's API directly, which only works inside a
+// Claude.ai session — a plain downloaded HTML file has no way to attach an
+// Anthropic key and the request gets blocked, so search silently failed for
+// every company. Google's Generative Language API can be called from a
+// browser with just an API key, so Gemini (with Google Search grounding) is
+// used here instead. If no Gemini key has been set (see the Bulk Review
+// page), this quietly falls back to keyword classification.
+async function classifyWithAI(company) {
+  const useWebSearch = document.getElementById('method2-toggle')?.checked !== false;
+
+  // Method 1: keyword pre-check (fast, instant baseline / offline fallback)
+  const keywordResult = classifyByName(company.name);
+
+  if (!useWebSearch) {
+    keywordResult.dataSource = 'Keywords only';
+    return keywordResult;
+  }
+
+  if (!getGeminiKey()) {
+    keywordResult.dataSource = 'Keywords only (add a Gemini key on the Bulk Review page to enable live search)';
+    return keywordResult;
+  }
+
+  logLine(`   🔎 Searching Google via Gemini for: ${company.name.slice(0,40)}`, 'log-warn');
+  const result = await geminiWebClassify(company, (msg) => logLine(`   ${msg}`, 'log-warn'));
+  if (!result || result.error) {
+    logLine(`   ✗ Gemini search failed (${result?.error||'unknown'}) — using name keywords`, 'log-warn');
+    keywordResult.dataSource = 'Keywords only (Gemini: ' + (result?.error||'search failed') + ')';
+    return keywordResult;
+  }
+  if ((result.confidence||0) < 85) result.confidence = Math.min(95, (result.confidence||60) + 15);
+  if (result.industryCode && result.industryCode !== 'OTHR') {
+    logLine(`   ✓ Found via Gemini search: ${result.industryCode}`, 'log-ok');
+  } else {
+    logLine(`   ✗ Gemini search inconclusive`, 'log-warn');
+  }
+  return result;
+}
+
+// helper to write to the AI log from within classifyWithAI
+function logLine(msg, cls='') {
+  const log = document.getElementById('ai-log');
+  if (!log) return;
+  log.innerHTML += `<div class="log-line ${cls}">${msg}</div>`;
+  log.scrollTop = log.scrollHeight;
+}
+
+let classifyRunning = false;
+let stopRequested = false;
+
+function stopClassify() {
+  stopRequested = true;
+  document.getElementById('btn-stop').disabled = true;
+  document.getElementById('btn-stop').textContent = 'Stopping...';
+  document.getElementById('classify-status').textContent = 'Stopping after current company...';
+}
+
+async function classifyAll() {
+  const unclassified = DB.filter(c => !c.industryCode || c.industryCode === '');
+  if (!unclassified.length) { toast('All companies already classified!'); return; }
+  if (classifyRunning) return;
+  classifyRunning = true;
+  stopRequested = false;
+  document.getElementById('classify-progress').style.display = 'block';
+  document.getElementById('btn-classify-all').disabled = true;
+  document.getElementById('btn-stop').style.display = 'inline-flex';
+  document.getElementById('btn-stop').disabled = false;
+  document.getElementById('btn-stop').textContent = '⏹ Stop';
+  const log = document.getElementById('ai-log');
+  log.innerHTML = '';
+  let done = 0;
+  for (const company of unclassified) {
+    if (stopRequested) {
+      saveDB(); renderClassifyTable(); renderDashboard(); updateBadge();
+      document.getElementById('classify-status').textContent = `Stopped — ${done} classified, ${unclassified.length - done} remaining.`;
+      document.getElementById('classify-count').textContent = `${done} / ${unclassified.length}`;
+      document.getElementById('btn-stop').style.display = 'none';
+      document.getElementById('btn-classify-all').disabled = false;
+      classifyRunning = false;
+      stopRequested = false;
+      log.innerHTML += `<div class="log-line log-warn">[---] ⏹ Stopped by user. ${unclassified.length - done} companies still unclassified. Click "Classify All" to resume.</div>`;
+      log.scrollTop = log.scrollHeight;
+      toast(`⏹ Stopped — ${done} classified, ${unclassified.length - done} remaining`);
+      return;
+    }
+    document.getElementById('classify-status').textContent = `Classifying: ${company.name.slice(0, 40)}...`;
+    document.getElementById('classify-count').textContent = `${done} / ${unclassified.length}`;
+    document.getElementById('classify-bar').style.width = (done / unclassified.length * 100) + '%';
+
+    const result = await classifyWithAI(company);
+    const idx = DB.findIndex(d => d.id === company.id);
+    if (idx !== -1) {
+      DB[idx].industryCode = result.industryCode || result.code || 'OTHR';
+      DB[idx].industryName = result.industryName || INDUSTRY_CODES[DB[idx].industryCode];
+      DB[idx].subIndustry = result.subIndustry || '';
+      DB[idx].mainProducts = result.mainProducts || DB[idx].mainProducts;
+      DB[idx].confidence = result.confidence || 70;
+      DB[idx].services = SERVICE_MAP[DB[idx].industryCode] || ['Solar EPC','Energy Audit'];
+      DB[idx].manufacturingProcess = result.manufacturingProcess || DB[idx].manufacturingProcess || '';
+      DB[idx].dataSource = result.dataSource || '';
+      DB[idx].classificationBasis = result.classificationBasis || '';
+      // Boost confidence if GIDC location strongly implies an industry
+      const gidcBoost = getGIDCBoost(DB[idx].gidc || DB[idx].city || '', DB[idx].industryCode);
+      if (gidcBoost && DB[idx].confidence < 85) DB[idx].confidence = Math.min(88, DB[idx].confidence + gidcBoost);
+      DB[idx].status = DB[idx].confidence >= 88 ? 'Auto-Approved' : DB[idx].confidence >= 60 ? 'Check' : 'Manual Review';
+      DB[idx].leadScore = Math.min(100, DB[idx].confidence + (DB[idx].email ? 5 : 0) + (DB[idx].website ? 5 : 0) + (DB[idx].dataSource && DB[idx].dataSource.includes('Website') ? 5 : 0));
+    }
+    const cls = result.confidence >= 90 ? 'log-ok' : result.confidence >= 70 ? 'log-warn' : 'log-err';
+    const src = result.dataSource ? ` [${result.dataSource}]` : ''; log.innerHTML += `<div class="log-line ${cls}">[${String(done+1).padStart(3,'0')}] ${company.name.slice(0,30).padEnd(30)} → ${DB[idx]?.industryCode || 'OTHR'} (${result.confidence}%)${src}</div>`;
+    log.scrollTop = log.scrollHeight;
+    done++;
+    if (done % 5 === 0) { saveDB(); renderClassifyTable(); }
+    await new Promise(r => setTimeout(r, 200));
+  }
+  saveDB();
+  renderClassifyTable();
+  renderDashboard();
+  updateBadge();
+  document.getElementById('classify-status').textContent = `Done! All ${done} companies classified.`;
+  document.getElementById('classify-count').textContent = `${done} / ${unclassified.length}`;
+  document.getElementById('classify-bar').style.width = '100%';
+  document.getElementById('btn-stop').style.display = 'none';
+  document.getElementById('btn-classify-all').disabled = false;
+  classifyRunning = false;
+  toast(`✅ Classified ${done} companies`);
+}
+
+async function classifySelected() {
+  const checked = [...document.querySelectorAll('.row-check:checked')].map(cb => cb.dataset.id);
+  if (!checked.length) { toast('Select companies first'); return; }
+  const companies = DB.filter(c => checked.includes(String(c.id)));
+  for (const company of companies) {
+    const result = await classifyWithAI(company);
+    const idx = DB.findIndex(d => d.id === company.id);
+    if (idx !== -1) {
+      DB[idx].industryCode = result.industryCode || result.code || 'OTHR';
+      DB[idx].industryName = result.industryName || INDUSTRY_CODES[DB[idx].industryCode];
+      DB[idx].confidence = result.confidence || 70;
+      DB[idx].services = SERVICE_MAP[DB[idx].industryCode] || [];
+      // Boost confidence if GIDC location strongly implies an industry
+      const gidcBoost = getGIDCBoost(DB[idx].gidc || DB[idx].city || '', DB[idx].industryCode);
+      if (gidcBoost && DB[idx].confidence < 85) DB[idx].confidence = Math.min(88, DB[idx].confidence + gidcBoost);
+      DB[idx].status = DB[idx].confidence >= 88 ? 'Auto-Approved' : DB[idx].confidence >= 60 ? 'Check' : 'Manual Review';
+    }
+  }
+  saveDB(); renderClassifyTable(); toast(`Classified ${companies.length} companies`);
+}
+
+function toggleSelectAll(cb) {
+  document.querySelectorAll('.row-check').forEach(c => c.checked = cb.checked);
+}
+
+function renderClassifyTable() {
+  const search = document.getElementById('classify-search').value.toLowerCase();
+  const statusF = document.getElementById('classify-filter-status').value;
+  const cityF = document.getElementById('classify-filter-city').value;
+  let rows = DB.filter(c => {
+    if (search && !c.name.toLowerCase().includes(search) && !c.city.toLowerCase().includes(search)) return false;
+    if (cityF && c.city !== cityF) return false;
+    if (statusF === 'classified' && !c.industryCode) return false;
+    if (statusF === 'unclassified' && c.industryCode) return false;
+    if (statusF === 'review' && c.status !== 'Manual Review') return false;
+    return true;
+  });
+  const tbody = document.getElementById('classify-tbody');
+  const empty = document.getElementById('classify-empty');
+  if (!rows.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+  tbody.innerHTML = rows.map(c => {
+    const conf = c.confidence || 0;
+    const cls = conf >= 90 ? 'conf-high' : conf >= 70 ? 'conf-mid' : 'conf-low';
+    const statusBadge = c.status === 'Auto-Approved' ? 'badge-green' : c.status === 'Check' ? 'badge-amber' : c.status === 'Manual Review' ? 'badge-red' : 'badge-gray';
+    const tags = (c.services||[]).slice(0,2).map(s => `<span class="service-tag">${s}</span>`).join('') + (c.services?.length > 2 ? `<span class="service-tag">+${c.services.length-2}</span>` : '');
+    return `<tr>
+      <td><input type="checkbox" class="row-check" data-id="${c.id}"></td>
+      <td style="font-weight:500;max-width:200px;">${c.name}</td>
+      <td><span class="text-muted">${c.city||c.gidc||'—'}</span></td>
+      <td>${c.industryCode ? `<strong>${c.industryCode}</strong> <span class="text-muted">${c.industryName||''}</span>` : '<span class="text-muted">—</span>'}</td>
+      <td>${conf ? `<div class="conf-circle ${cls}">${conf}%</div>` : '<span class="text-muted">—</span>'}</td>
+      <td>${tags || '<span class="text-muted">—</span>'}</td>
+      <td><span class="badge ${statusBadge}">${c.status||'Unclassified'}</span></td>
+      <td><button class="btn btn-sm" onclick="reclassify('${c.id}')">↻</button></td>
+    </tr>`;
+  }).join('');
+}
+
+async function reclassify(id) {
+  const company = DB.find(c => String(c.id) === String(id));
+  if (!company) return;
+  const result = await classifyWithAI(company);
+  const idx = DB.findIndex(d => String(d.id) === String(id));
+  DB[idx].industryCode = result.industryCode || result.code || 'OTHR';
+  DB[idx].industryName = result.industryName || INDUSTRY_CODES[DB[idx].industryCode];
+  DB[idx].confidence = result.confidence || 70;
+  DB[idx].services = SERVICE_MAP[DB[idx].industryCode] || [];
+  DB[idx].status = DB[idx].confidence >= 90 ? 'Auto-Approved' : DB[idx].confidence >= 70 ? 'Check' : 'Manual Review';
+  saveDB(); renderClassifyTable(); toast('Re-classified!');
+}
+
+function refreshCityFilters() {
+  const cities = [...new Set(DB.map(c => c.city).filter(Boolean))];
+  ['classify-filter-city'].forEach(id => {
+    const sel = document.getElementById(id);
+    const val = sel.value;
+    sel.innerHTML = '<option value="">All cities</option>' + cities.map(c => `<option>${c}</option>`).join('');
+    sel.value = val;
+  });
+}
+
+// ===================== DATABASE =====================
+function renderDBTable() {
+  const search = document.getElementById('db-search').value.toLowerCase();
+  const indF = document.getElementById('db-filter-industry').value;
+  const cityF = document.getElementById('db-filter-city').value;
+  const custF = document.getElementById('db-filter-customer').value;
+  let rows = DB.filter(c => {
+    if (search && !c.name.toLowerCase().includes(search) && !(c.city||'').toLowerCase().includes(search)) return false;
+    if (indF && c.industryCode !== indF) return false;
+    if (cityF && c.city !== cityF) return false;
+    if (custF && c.existingCustomer !== custF) return false;
+    return true;
+  });
+  const tbody = document.getElementById('db-tbody');
+  const empty = document.getElementById('db-empty');
+  if (!rows.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+  tbody.innerHTML = rows.map(c => {
+    const tags = (c.services||[]).slice(0,2).map(s => `<span class="service-tag">${s}</span>`).join('') + (c.services?.length > 2 ? `<span class="service-tag">+${c.services.length-2}</span>` : '');
+    const score = c.leadScore ? `<span class="badge ${c.leadScore>=80?'badge-green':c.leadScore>=60?'badge-amber':'badge-gray'}">${c.leadScore}</span>` : '—';
+    return `<tr>
+      <td style="font-weight:500;max-width:180px;">${c.name}</td>
+      <td class="text-muted">${c.city||c.gidc||'—'}</td>
+      <td>${c.industryCode ? (c.industryCodes && c.industryCodes.length > 1 ? c.industryCodes.map(code => `<span class="badge badge-green" style="margin-right:2px;">${code}</span>`).join('') : `<span class="badge badge-green">${c.industryCode}</span>`) : '<span class="text-muted">—</span>'}</td>
+      <td class="text-muted">${c.contactPerson||'—'}</td>
+      <td style="color:var(--blue-400);font-size:12px;">${c.email||'—'}</td>
+      <td>${tags||'—'}</td>
+      <td><span class="badge ${c.existingCustomer==='Y'?'badge-green':'badge-gray'}">${c.existingCustomer==='Y'?'Customer':'Lead'}</span></td>
+      <td>${score}</td>
+      <td><button class="btn btn-sm" onclick="deleteCompany('${c.id}')">🗑</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function refreshDBFilters() {
+  const industries = [...new Set(DB.map(c => c.industryCode).filter(Boolean))];
+  const cities = [...new Set(DB.map(c => c.city).filter(Boolean))];
+  const indSel = document.getElementById('db-filter-industry');
+  const citySel = document.getElementById('db-filter-city');
+  indSel.innerHTML = '<option value="">All industries</option>' + industries.map(i => `<option value="${i}">${i} — ${INDUSTRY_CODES[i]||i}</option>`).join('');
+  citySel.innerHTML = '<option value="">All cities</option>' + cities.map(c => `<option>${c}</option>`).join('');
+  const campInd = document.getElementById('camp-industry');
+  if (campInd) campInd.innerHTML = '<option value="">All industries</option>' + Object.entries(INDUSTRY_CODES).map(([k,v]) => `<option value="${k}">${k} — ${v}</option>`).join('');
+}
+
+function deleteCompany(id) {
+  DB = DB.filter(c => String(c.id) !== String(id));
+  saveDB(); renderDBTable(); updateBadge(); toast('Company removed');
+}
+
+function exportDB() {
+  const rows = DB.map(c => ({
+    'Company Name': c.name, 'GIDC': c.gidc, 'City': c.city, 'State': c.state,
+    'Email': c.email, 'Phone': c.phone, 'Website': c.website,
+    'Industry Code': c.industryCode, 'Industry': c.industryName,
+    'All Categories': (c.industryCodes && c.industryCodes.length ? c.industryCodes : [c.industryCode]).filter(Boolean).join(', '),
+    'Sub Industry': c.subIndustry, 'Main Products': c.mainProducts,
+    'Services Tagged': (c.services||[]).join(', '),
+    'Confidence %': c.confidence, 'Status': c.status,
+    'Existing Customer': c.existingCustomer, 'Lead Score': c.leadScore, 'Notes': c.notes
+  }));
+  const ws = XLSX.utils.json_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Master Database');
+  XLSX.writeFile(wb, 'Revive_Master_Database.xlsx');
+  toast('📥 Exported to Excel');
+}
+
+// ===================== MANUAL ADD =====================
+function addCompanyManual() {
+  const name = document.getElementById('add-name').value.trim();
+  if (!name) { toast('Company name is required'); return; }
+  const company = {
+    id: Date.now() + Math.random(),
+    name, gidc: document.getElementById('add-gidc').value,
+    city: document.getElementById('add-city').value,
+    state: 'Gujarat', email: document.getElementById('add-email').value,
+    phone: document.getElementById('add-phone').value,
+    website: document.getElementById('add-website').value,
+    contactPerson: '', designation: '', industryCode: '', industryName: '',
+    subIndustry: '', mainProducts: '', services: [], confidence: 0,
+    existingCustomer: document.getElementById('add-customer').value,
+    leadScore: '', status: 'Unclassified', notes: '', source: 'Manual'
+  };
+  DB.push(company);
+  saveDB(); updateBadge(); hideModal('add-modal');
+  ['add-name','add-gidc','add-city','add-email','add-phone','add-website'].forEach(id => document.getElementById(id).value = '');
+  toast(`✅ ${name} added`);
+  renderDBTable();
+}
+
+// ===================== DASHBOARD =====================
+function renderDashboard() {
+  const total = DB.length;
+  const classified = DB.filter(c => c.industryCode).length;
+  const high = DB.filter(c => c.confidence >= 90).length;
+  const review = DB.filter(c => c.status === 'Manual Review').length;
+  document.getElementById('stat-total').textContent = total;
+  document.getElementById('stat-classified').textContent = classified;
+  document.getElementById('stat-classified-pct').textContent = total ? Math.round(classified/total*100) + '% of total' : '0%';
+  document.getElementById('stat-high').textContent = high;
+  document.getElementById('stat-review').textContent = review;
+
+  // Industry chart
+  const indChart = document.getElementById('industry-chart');
+  if (!classified) { indChart.innerHTML = '<div class="empty-state"><div class="empty-icon">📊</div><p>Classify companies to see breakdown</p></div>'; }
+  else {
+    const counts = {};
+    DB.forEach(c => { if (c.industryCode) counts[c.industryCode] = (counts[c.industryCode]||0)+1; });
+    const sorted = Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,6);
+    const max = sorted[0][1];
+    indChart.innerHTML = sorted.map(([code,count]) => `<div style="margin-bottom:10px;"><div style="display:flex;justify-content:space-between;margin-bottom:3px;"><span style="font-size:12px;font-weight:500;">${code} — ${INDUSTRY_CODES[code]||code}</span><span style="font-size:12px;color:var(--text-3);">${count}</span></div><div class="progress-bar-wrap" style="height:8px;"><div class="progress-bar" style="width:${Math.round(count/max*100)}%;background:var(--green-400);"></div></div></div>`).join('');
+  }
+
+  // Service chart
+  const svcChart = document.getElementById('service-chart');
+  const svcCounts = {};
+  DB.forEach(c => (c.services||[]).forEach(s => svcCounts[s] = (svcCounts[s]||0)+1));
+  const topSvc = Object.entries(svcCounts).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  if (!topSvc.length) { svcChart.innerHTML = '<div class="empty-state"><div class="empty-icon">🌱</div><p>Classify companies to see opportunities</p></div>'; }
+  else { const mx = topSvc[0][1]; svcChart.innerHTML = topSvc.map(([s,n])=>`<div style="margin-bottom:10px;"><div style="display:flex;justify-content:space-between;margin-bottom:3px;"><span style="font-size:12px;font-weight:500;">${s}</span><span style="font-size:12px;color:var(--text-3);">${n} cos</span></div><div class="progress-bar-wrap" style="height:8px;"><div class="progress-bar" style="width:${Math.round(n/mx*100)}%;background:var(--teal-400);"></div></div></div>`).join(''); }
+
+  // Recent
+  const recent = [...DB].reverse().slice(0,5);
+  const ra = document.getElementById('recent-activity');
+  if (!recent.length) { ra.innerHTML = '<div class="empty-state"><div class="empty-icon">🕐</div><p>No activity yet.</p></div>'; }
+  else { ra.innerHTML = recent.map(c => `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);"><div><div style="font-weight:500;font-size:13px;">${c.name}</div><div class="text-muted">${c.city||c.gidc||'—'} · ${c.source||'Imported'}</div></div><span class="badge ${c.industryCode?'badge-green':'badge-gray'}">${c.industryCode||'Unclassified'}</span></div>`).join(''); }
+}
+
+// ===================== CAMPAIGNS =====================
+let activeCampaignTab = 'active';
+function switchCampaignTab(tab, el) {
+  activeCampaignTab = tab;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderCampaigns();
+}
+
+function renderCampaigns() {
+  const list = document.getElementById('campaigns-list');
+  const filtered = campaigns.filter(c => c.status === activeCampaignTab);
+  if (!filtered.length) { list.innerHTML = '<div class="empty-state"><div class="empty-icon">📧</div><p>No ' + activeCampaignTab + ' campaigns.</p></div>'; return; }
+  list.innerHTML = filtered.map(c => `<div class="campaign-card">
+    <div>
+      <div style="font-weight:600;font-size:14px;">${c.name}</div>
+      <div class="campaign-meta">${c.industry ? c.industry + ' · ' : ''}${c.service||'All services'} · ${c.subject||'No subject'}</div>
+      <div class="campaign-meta" style="margin-top:4px;">${c.leads} leads targeted · Scheduled: ${c.date||'TBD'}</div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <span class="badge ${c.status==='active'?'badge-green':c.status==='completed'?'badge-blue':'badge-gray'}">${c.status}</span>
+      <button class="btn btn-sm" onclick="deleteCampaign('${c.id}')">🗑</button>
+    </div>
+  </div>`).join('');
+}
+
+function createCampaign() {
+  const name = document.getElementById('camp-name').value.trim();
+  if (!name) { toast('Campaign name required'); return; }
+  const industry = document.getElementById('camp-industry').value;
+  const service = document.getElementById('camp-service').value;
+  const leads = DB.filter(c => (!industry || c.industryCode === industry) && (!service || (c.services||[]).includes(service))).length;
+  campaigns.push({ id: Date.now(), name, industry, service, subject: document.getElementById('camp-subject').value, date: document.getElementById('camp-date').value, leads, status: 'draft' });
+  saveDB(); hideModal('campaign-modal'); renderCampaigns();
+  document.getElementById('camp-name').value = ''; document.getElementById('camp-subject').value = '';
+  toast(`✅ Campaign created — ${leads} leads targeted`);
+}
+
+function deleteCampaign(id) { campaigns = campaigns.filter(c => String(c.id) !== String(id)); saveDB(); renderCampaigns(); }
+
+function buildSegment() {
+  const ind = document.getElementById('seg-industry').value;
+  const svc = document.getElementById('seg-service').value;
+  const cust = document.getElementById('seg-customer').value;
+  const results = DB.filter(c => (!ind || c.industryCode === ind) && (!svc || (c.services||[]).includes(svc)) && (!cust || c.existingCustomer === cust));
+  const el = document.getElementById('segment-result');
+  if (!results.length) { el.innerHTML = '<div class="text-muted" style="margin-top:12px;">No companies match these filters.</div>'; return; }
+  el.innerHTML = `<div style="margin-top:14px;"><div style="font-size:14px;font-weight:600;margin-bottom:8px;">Segment: ${results.length} companies</div>${results.slice(0,5).map(c => `<div style="padding:8px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;"><span style="font-size:13px;font-weight:500;">${c.name}</span><span class="text-muted">${c.city||'—'} · ${c.industryCode||'—'}</span></div>`).join('')}${results.length>5?`<div class="text-muted" style="padding:8px 0;">…and ${results.length-5} more</div>`:''}<div style="margin-top:12px;display:flex;gap:8px;"><button class="btn btn-primary btn-sm" onclick="exportSegment(${JSON.stringify(results.map(c=>c.id))})">⬇ Export Segment</button><button class="btn btn-sm" onclick="showModal('campaign-modal')">+ Create Campaign from This</button></div></div>`;
+}
+
+function exportSegment(ids) {
+  const seg = DB.filter(c => ids.includes(c.id));
+  const rows = seg.map(c => ({ 'Company': c.name, 'City': c.city, 'Industry': c.industryName, 'Email': c.email, 'Phone': c.phone, 'Services': (c.services||[]).join(', ') }));
+  const ws = XLSX.utils.json_to_sheet(rows); const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Segment');
+  XLSX.writeFile(wb, 'Revive_Segment.xlsx'); toast('📥 Segment exported');
+}
+
+function refreshCampaignIndustries() { refreshDBFilters(); }
+function refreshSegIndustries() {
+  const sel = document.getElementById('seg-industry');
+  if (!sel) return;
+  const industries = [...new Set(DB.map(c => c.industryCode).filter(Boolean))];
+  sel.innerHTML = '<option value="">Any industry</option>' + industries.map(i => `<option value="${i}">${i} — ${INDUSTRY_CODES[i]||i}</option>`).join('');
+}
+
+// ===================== UTILS =====================
+function updateBadge() {
+  document.getElementById('total-badge').textContent = DB.length + ' companies';
+}
+
+function showModal(id) { document.getElementById(id).classList.add('open'); }
+function hideModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(m => m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); }));
+
+function toast(msg) {
+  const wrap = document.getElementById('toast-wrap');
+  const t = document.createElement('div');
+  t.className = 'toast'; t.textContent = msg;
+  wrap.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+
+// ===================== BULK REVIEW =====================
+// ── Manual review search helpers ─────────────────────────────────────
+// Automated AI web-search classification was unreliable when this page runs
+// as a standalone file (the Anthropic API can't be called with a key from a
+// plain browser page). Instead, reviewers search Google/IndiaMART themselves
+// for each company, then pick its industry and jot a quick note.
+
+function buildSearchTerms(company) {
+  const location = [company.city, company.gidc, company.state].filter(Boolean).join(' ') || 'Gujarat India';
+  return `${company.name} ${location} manufacturer products industry`;
+}
+
+function openGoogleSearch(id) {
+  const company = DB.find(c => String(c.id) === String(id));
+  if (!company) return;
+  const url = 'https://www.google.com/search?q=' + encodeURIComponent(buildSearchTerms(company));
+  window.open(url, '_blank', 'noopener');
+  markSearched(id);
+}
+
+function openIndiaMartSearch(id) {
+  const company = DB.find(c => String(c.id) === String(id));
+  if (!company) return;
+  const url = 'https://www.indiamart.com/search.mp?ss=' + encodeURIComponent(company.name);
+  window.open(url, '_blank', 'noopener');
+  markSearched(id);
+}
+
+function markSearched(id) {
+  const idx = DB.findIndex(d => String(d.id) === String(id));
+  if (idx !== -1) DB[idx].searched = true;
+  const row = document.getElementById(`brow-${id}`);
+  if (row) row.style.background = 'var(--green-50)';
+}
+
+// Walks the reviewer through the Manual Review queue one company at a time:
+// opens a Google search for the next un-searched company and scrolls to its row.
+let searchNextCursor = 0;
+function searchNextCompany() {
+  const toReview = DB.filter(c => c.status === 'Manual Review' || c.industryCode === 'OTHR' || !c.industryCode);
+  if (!toReview.length) { toast('No companies need review!'); return; }
+  const remaining = toReview.filter(c => !c.searched);
+  const next = remaining.length ? remaining[0] : toReview[searchNextCursor % toReview.length];
+  searchNextCursor++;
+
+  openGoogleSearch(next.id);
+
+  const statusBox = document.getElementById('review-session-status');
+  const statusText = document.getElementById('review-session-text');
+  if (statusBox && statusText) {
+    statusBox.style.display = 'block';
+    const done = toReview.filter(c => c.searched).length;
+    statusText.textContent = `🔍 Opened Google search for "${next.name}" — pick its industry below, then click this button again for the next one. (${done}/${toReview.length} searched)`;
+  }
+
+  const row = document.getElementById(`brow-${next.id}`);
+  if (row) row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+// ── Gemini-powered auto-search ───────────────────────────────────────
+// Unlike the Anthropic API, Google's Generative Language API can be called
+// directly from a browser page with just an API key (no server, no CORS
+// issue), so this lets the review page actually search Google automatically
+// for you when you don't want to click through hundreds of companies by hand.
+const GEMINI_KEY_STORAGE = 'revive_gemini_api_key';
+
+function getGeminiKey() {
+  try { return localStorage.getItem(GEMINI_KEY_STORAGE) || ''; }
+  catch(e) { return ''; }
+}
+
+function setGeminiKeyStatusUI() {
+  const key = getGeminiKey();
+  document.querySelectorAll('#gemini-key-status').forEach(el => {
+    if (key) { el.textContent = 'Key set ✓'; el.className = 'badge badge-green'; }
+    else { el.textContent = 'Not set'; el.className = 'badge badge-red'; }
+  });
+  const input = document.getElementById('gemini-key-input');
+  if (input && key) input.value = key;
+}
+
+function saveGeminiKey() {
+  const input = document.getElementById('gemini-key-input');
+  const key = (input?.value || '').trim();
+  if (!key) { toast('Paste a Gemini API key first'); return; }
+  try { localStorage.setItem(GEMINI_KEY_STORAGE, key); }
+  catch(e) { toast('Could not save key in this browser'); return; }
+  setGeminiKeyStatusUI();
+  toast('🔑 Gemini key saved');
+}
+
+// Models to try, in order. gemini-2.0-flash was retired by Google in March 2026.
+// Each model below has its OWN separate daily quota bucket, so if 2.5 Flash and
+// 2.5 Flash-Lite are both used up for the day, the app falls through to the
+// Gemini 3.x models, which likely haven't been touched yet and still have quota.
+const GEMINI_MODELS = ['gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-3-flash-preview', 'gemini-3.1-flash-lite', 'gemini-3.5-flash'];
+
+// Calls Gemini with Google Search grounding enabled and asks it to classify
+// the company. Returns {error} (never throws) if there's no key or the call
+// fails, so callers can fall back to keyword classification.
+async function geminiWebClassify(company, onStatus) {
+  const key = getGeminiKey();
+  if (!key) return { error: 'no_key' };
+
+  const location = [company.gidc, company.city, company.state].filter(Boolean).join(', ') || 'Gujarat, India';
+  const prompt = `You are an expert classifier for Indian GIDC (Gujarat Industrial Development Corporation) industrial companies. AVOID classifying companies as "OTHR" — use every available clue.
+
+Company: ${company.name}
+Location: ${location}
+${company.mainProducts ? 'Known products: ' + company.mainProducts : ''}
+${company.website ? 'Website: ' + company.website : ''}
+
+Use Google Search to find out what this company actually manufactures or does, and try to find its official website URL. Many companies genuinely operate across more than one industry (e.g. a company that both processes textiles AND makes the specialty chemicals used in that process) — when the evidence supports more than one category, list all of them, not just the closest single match. If search is inconclusive, fall back on these location clues: Ankleshwar/Panoli = CHEM/PHAR, Vapi = CHEM/TEXT, Surat = TEXT, Rajkot = ENGG/AUTO, Morbi = CERA, Vatva/Naroda = CHEM/TEXT/PACK, Sachin = TEXT/PACK, Halol = AUTO/ENGG. Generic Indian names (Shree, Jay, Om, Krishna, Ganesh, Bharat, United, Supreme, etc.) do NOT by themselves mean "Other" — keep digging into search results and location clues. Only use OTHR if search truly returns nothing useful and no location clue applies.
+
+Respond with ONLY raw JSON, no markdown fences, no commentary:
+{"industryCode":"the single BEST-fit code, one of CHEM,PHAR,TEXT,PACK,PLAS,FOOD,BEV,ENGG,AUTO,METL,FOUN,CERA,GLAS,PAPER,FMCG,ELEC,RUBB,CEMT,LOGI,REAL,OTHR","secondaryIndustries":["any OTHER codes from that same list that genuinely also apply — empty array if it's really just one industry"],"industryName":"full industry name for the primary code","subIndustry":"specific type e.g. Specialty Chemicals","mainProducts":"short comma-separated product list","website":"the company's official website URL if you found one, else empty string","confidence":0-100,"reasoning":"one short sentence on what the search found"}`;
+
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+  function parseRetryDelaySeconds(errBody, errMsg) {
+    let m = /"retryDelay"\s*:\s*"(\d+(?:\.\d+)?)s"/.exec(errBody || '');
+    if (m) return parseFloat(m[1]);
+    m = /retry in (\d+(?:\.\d+)?)\s*s/i.exec(errMsg || '');
+    if (m) return parseFloat(m[1]);
+    return null;
+  }
+
+  let lastError = '';
+  let fatal = false;
+  let quotaExhausted = false;
+  for (const model of GEMINI_MODELS) {
+    if (fatal) break;
+    // Quota (429) errors get exactly ONE retry using Google's own suggested wait time —
+    // if it fails again after waiting that long, the daily quota is genuinely exhausted
+    // and further retries are pointless until it resets. Transient "server busy" (503)
+    // errors get a couple of short retries since those usually clear up fast.
+    const maxAttempts = 2;
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      try {
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
+          body: JSON.stringify({
+            contents: [{ role: 'user', parts: [{ text: prompt }] }],
+            tools: [{ google_search: {} }]
+          })
+        });
+        if (!res.ok) {
+          const errBody = await res.text().catch(()=> '');
+          let errMsg = `HTTP ${res.status}`;
+          try { errMsg = JSON.parse(errBody)?.error?.message || errMsg; } catch(e) {}
+          lastError = `${model}: ${errMsg}`;
+          if (res.status === 400 || res.status === 401 || res.status === 403) { fatal = true; break; }
+
+          const isQuota = res.status === 429;
+          const isOverloaded = res.status === 503 || /high demand|overloaded/i.test(errMsg);
+          if (isQuota && attempt === 0) {
+            const suggested = parseRetryDelaySeconds(errBody, errMsg);
+            const waitSec = suggested ? Math.min(suggested + 2, 70) : 60;
+            if (onStatus) onStatus(`⏳ Rate limit hit on ${model} — waiting ${Math.round(waitSec)}s before one retry...`);
+            await sleep(waitSec * 1000);
+            continue;
+          }
+          if (isQuota) { quotaExhausted = true; break; } // failed again after the real wait — daily quota is dead
+          if (isOverloaded && attempt < maxAttempts - 1) {
+            if (onStatus) onStatus(`⏳ Server busy on ${model} — waiting 5s before retrying...`);
+            await sleep(5000);
+            continue;
+          }
+          break; // out of retries for this model — try the next model
+        }
+        const data = await res.json();
+        const parts = data.candidates?.[0]?.content?.parts || [];
+        const text = parts.map(p => p.text || '').join('\n');
+        const clean = text.replace(/```json|```/g, '').trim();
+        const jsonMatch = clean.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) { lastError = `${model}: no JSON in response — ${text.slice(0,150)}`; break; }
+        const parsed = JSON.parse(jsonMatch[0]);
+        parsed.dataSource = 'Gemini Web Search (' + model + ')';
+        parsed.secondaryIndustries = Array.isArray(parsed.secondaryIndustries) ? parsed.secondaryIndustries.filter(c => c && c !== parsed.industryCode) : [];
+        return parsed;
+      } catch (e) {
+        lastError = `${model}: ${e.message}`;
+        break; // network-level failure — try the next model rather than retrying blindly
+      }
+    }
+  }
+  console.warn('Gemini classify failed for', company.name, lastError);
+  return { error: lastError || 'unknown error', quotaExhausted };
+}
+
+// ── Gemini auto-review runner (Bulk Review page) ─────────────────────
+let geminiReviewRunning = false;
+let geminiReviewStop = false;
+
+function stopGeminiReview() {
+  geminiReviewStop = true;
+  const btn = document.getElementById('btn-gemini-stop');
+  if (btn) { btn.disabled = true; btn.textContent = 'Stopping...'; }
+}
+
+// True if this company already has a successful (non-fallback) Gemini result staged
+function isAlreadyGeminiClassified(c) {
+  return !!(c.aiSuggestion && /^Gemini Web Search/.test(c.aiSuggestion.dataSource || ''));
+}
+
+async function geminiReviewAll(force) {
+  if (!getGeminiKey()) { toast('Paste and save a Gemini API key first'); return; }
+  let toReview = DB.filter(c => c.status === 'Manual Review' || c.industryCode === 'OTHR' || !c.industryCode);
+  if (!toReview.length) { toast('No companies need review!'); return; }
+  if (!force) {
+    const before = toReview.length;
+    toReview = toReview.filter(c => !isAlreadyGeminiClassified(c));
+    const skipped = before - toReview.length;
+    if (!toReview.length) { toast('Everything left already has a Gemini result — click Save All Changes, or use "Redo All" to re-search anyway'); return; }
+    if (skipped > 0) toast(`Skipping ${skipped} already-classified companies — searching the remaining ${toReview.length}`);
+  }
+  if (geminiReviewRunning) return;
+  await _runGeminiReview(toReview);
+}
+
+async function geminiReviewSelected() {
+  if (!getGeminiKey()) { toast('Paste and save a Gemini API key first'); return; }
+  const checked = [...document.querySelectorAll('.bulk-row-check:checked')].map(cb => cb.dataset.id);
+  if (!checked.length) { toast('Select companies first'); return; }
+  const toReview = DB.filter(c => checked.includes(String(c.id)));
+  await _runGeminiReview(toReview);
+}
+
+async function _runGeminiReview(companies) {
+  geminiReviewRunning = true;
+  geminiReviewStop = false;
+
+  const progress = document.getElementById('gemini-review-progress');
+  const log = document.getElementById('gemini-review-log');
+  const bar = document.getElementById('gemini-review-bar');
+  const countEl = document.getElementById('gemini-review-count');
+  const stopBtn = document.getElementById('btn-gemini-stop');
+  const allBtn = document.getElementById('btn-gemini-all');
+  const selBtn = document.getElementById('btn-gemini-selected');
+
+  progress.style.display = 'block';
+  stopBtn.style.display = 'inline-flex';
+  stopBtn.disabled = false;
+  stopBtn.textContent = '⏹ Stop';
+  allBtn.disabled = true;
+  selBtn.disabled = true;
+  log.innerHTML = '';
+
+  let done = 0;
+  for (const company of companies) {
+    if (geminiReviewStop) {
+      log.innerHTML += `<div class="log-line log-warn">[---] ⏹ Stopped by user. ${companies.length - done} remaining.</div>`;
+      log.scrollTop = log.scrollHeight;
+      break;
+    }
+
+    countEl.textContent = `${done} / ${companies.length}`;
+    bar.style.width = (done / companies.length * 100) + '%';
+    log.innerHTML += `<div class="log-line log-warn">[${String(done+1).padStart(3,'0')}] 🔍 Searching: ${company.name.slice(0,40)}...</div>`;
+    log.scrollTop = log.scrollHeight;
+
+    let result = await geminiWebClassify(company, (msg) => {
+      log.innerHTML += `<div class="log-line log-warn">       ${msg}</div>`;
+      log.scrollTop = log.scrollHeight;
+    });
+    const quotaDead = !!result?.quotaExhausted;
+    if (!result || result.error) {
+      const errMsg = result?.error || 'unknown error';
+      log.innerHTML += `<div class="log-line log-err">       ✗ Gemini failed: ${errMsg} — falling back to keywords</div>`;
+      result = classifyByName(company.name);
+      result.reasoning = `Gemini unavailable (${errMsg}) — classified by name keywords only`;
+      result.dataSource = 'Keyword fallback';
+    }
+
+    const idx = DB.findIndex(d => d.id === company.id);
+    if (idx !== -1) {
+      // Stage as a suggestion — don't change status yet, let the reviewer confirm via Save
+      DB[idx].aiSuggestion = {
+        industryCode: result.industryCode,
+        industryName: result.industryName || INDUSTRY_CODES[result.industryCode],
+        subIndustry: result.subIndustry || '',
+        mainProducts: result.mainProducts || '',
+        secondaryIndustries: result.secondaryIndustries || [],
+        website: result.website || '',
+        confidence: result.confidence || 70,
+        reasoning: result.reasoning || '',
+        dataSource: result.dataSource || 'Gemini Web Search'
+      };
+      // Fill in the website if Gemini found one and we didn't already have it
+      if (result.website && !DB[idx].website) DB[idx].website = result.website;
+    }
+
+    const cls = (result.confidence||0) >= 80 ? 'log-ok' : (result.confidence||0) >= 60 ? 'log-warn' : 'log-err';
+    log.innerHTML += `<div class="log-line ${cls}">       ✓ → ${result.industryCode} (${result.confidence}%) — ${(result.reasoning||'').slice(0,50)}</div>`;
+    log.scrollTop = log.scrollHeight;
+
+    if (quotaDead) {
+      saveDB(); renderBulkReview();
+      log.innerHTML += `<div class="log-line log-err">[---] 🛑 Daily Gemini quota is exhausted (confirmed after a real wait) — stopping here rather than burning through the other ${companies.length - done - 1} companies one by one. Check https://ai.dev/rate-limit for your reset time, or click "Auto-Search All" again later — it'll pick up right where this left off.</div>`;
+      log.scrollTop = log.scrollHeight;
+      done++;
+      countEl.textContent = `${done} / ${companies.length}`;
+      bar.style.width = (done / companies.length * 100) + '%';
+      stopBtn.style.display = 'none';
+      allBtn.disabled = false;
+      selBtn.disabled = false;
+      geminiReviewRunning = false;
+      geminiReviewStop = false;
+      toast('🛑 Daily Gemini quota exhausted — stopped early. Try again later.');
+      return;
+    }
+
+    done++;
+    if (done % 5 === 0) { saveDB(); renderBulkReview(); }
+    await new Promise(r => setTimeout(r, 3500));
+  }
+
+  saveDB();
+  renderBulkReview();
+  countEl.textContent = `${done} / ${companies.length}`;
+  bar.style.width = '100%';
+  stopBtn.style.display = 'none';
+  allBtn.disabled = false;
+  selBtn.disabled = false;
+  geminiReviewRunning = false;
+  geminiReviewStop = false;
+  toast(`✨ Gemini researched ${done} companies — review suggestions below, then click Save All Changes`);
+}
+
+function renderBulkReview() {
+  const search = (document.getElementById('review-search')?.value || '').toLowerCase();
+  const filter = document.getElementById('review-filter')?.value || 'review';
+  let rows = DB.filter(c => {
+    if (filter === 'review') return c.status === 'Manual Review';
+    if (filter === 'othr') return c.industryCode === 'OTHR' || !c.industryCode;
+    return true;
+  }).filter(c => !search || c.name.toLowerCase().includes(search) || (c.city||'').toLowerCase().includes(search));
+
+  const countEl = document.getElementById('review-count');
+  const total = DB.filter(c => c.status === 'Manual Review').length;
+  if (countEl) countEl.textContent = total + ' to review';
+
+  const tbody = document.getElementById('bulk-review-tbody');
+  const empty = document.getElementById('bulk-review-empty');
+  if (!rows.length) { if(tbody) tbody.innerHTML = ''; if(empty) empty.style.display='block'; return; }
+  if(empty) empty.style.display = 'none';
+
+  const industryOptions = Object.entries(INDUSTRY_CODES).map(([k,v]) => `<option value="${k}">${k} — ${v}</option>`).join('');
+  const multiOptions = Object.entries(INDUSTRY_CODES).map(([k,v]) => `<option value="${k}">${k} — ${v}</option>`).join('');
+
+  if(tbody) tbody.innerHTML = rows.map(c => {
+    const suggestion = c.aiSuggestion;
+    const sugCode = suggestion?.industryCode || c.industryCode || '';
+    const sugConf = suggestion?.confidence || 0;
+    const confBadge = suggestion
+      ? `<span class="badge ${sugConf>=80?'badge-green':sugConf>=60?'badge-amber':'badge-red'}" style="font-size:9px;">${sugConf}%</span>`
+      : '';
+    const notesVal = c.notes || suggestion?.reasoning || suggestion?.mainProducts || '';
+    const rowBg = (c.searched || suggestion) ? 'background:var(--green-50);' : '';
+
+    // All categories currently saved for this company (primary + any extra)
+    const currentCodes = (c.industryCodes && c.industryCodes.length) ? c.industryCodes : (c.industryCode ? [c.industryCode] : []);
+    const currentBadges = currentCodes.length
+      ? currentCodes.map(code => `<span class="badge ${code!=='OTHR'?'badge-green':'badge-red'}" style="font-size:10px;">${code}</span>`).join(' ')
+      : '<span class="badge badge-red" style="font-size:10px;">—</span>';
+
+    // Pre-select "also applies to" from a saved secondary list, or from Gemini's suggestion
+    const preselectedSecondary = new Set(
+      (c.industryCodes && c.industryCodes.length ? c.industryCodes.filter(x => x !== sugCode) : (suggestion?.secondaryIndustries || []))
+    );
+    const multiOptionsForRow = Object.entries(INDUSTRY_CODES).map(([k,v]) =>
+      `<option value="${k}" ${preselectedSecondary.has(k) ? 'selected' : ''}>${k} — ${v}</option>`
+    ).join('');
+
+    return `<tr id="brow-${c.id}" style="${rowBg}">
+      <td><input type="checkbox" class="bulk-row-check" data-id="${c.id}"></td>
+      <td style="font-weight:500;max-width:160px;font-size:13px;">${c.name}</td>
+      <td style="font-size:11px;color:var(--text-3);">${c.city||c.gidc||'—'}</td>
+      <td><div style="display:flex;gap:3px;flex-wrap:wrap;max-width:110px;">${currentBadges}</div></td>
+      <td id="reason-${c.id}">
+        <div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center;">
+          <button class="btn btn-sm" style="padding:4px 8px;font-size:11px;" onclick="openGoogleSearch('${c.id}')">🔍 Google</button>
+          <button class="btn btn-sm" style="padding:4px 8px;font-size:11px;" onclick="openIndiaMartSearch('${c.id}')">IndiaMART</button>
+          ${confBadge}
+        </div>
+      </td>
+      <td>
+        <select class="review-industry-sel" data-id="${c.id}"
+          style="width:100%;padding:5px 8px;border-radius:8px;border:1px solid var(--border);font-size:12px;margin-bottom:3px;">
+          <option value="">— select —</option>
+          ${industryOptions.replace(`value="${sugCode}"`, `value="${sugCode}" selected`)}
+        </select>
+        <select class="review-industry-multi" data-id="${c.id}" multiple size="3"
+          title="Ctrl/Cmd-click to select more than one — use this if the company genuinely spans multiple industries"
+          style="width:100%;padding:2px;border-radius:8px;border:1px solid var(--border);font-size:11px;">
+          ${multiOptionsForRow}
+        </select>
+      </td>
+      <td>
+        <input type="text" class="review-notes-input" data-id="${c.id}" value="${notesVal.toString().replace(/"/g,'&quot;')}"
+          placeholder="e.g. makes PVC pipes"
+          style="width:100%;padding:5px 8px;border-radius:8px;border:1px solid var(--border);font-size:12px;">
+      </td>
+    </tr>`;
+  }).join('');
+
+  // Populate bulk assign dropdown
+  const bulkSel = document.getElementById('bulk-assign-industry');
+  if (bulkSel && bulkSel.options.length <= 1) {
+    Object.entries(INDUSTRY_CODES).forEach(([k,v]) => {
+      const o = document.createElement('option'); o.value=k; o.textContent=k+' — '+v; bulkSel.appendChild(o);
+    });
+  }
+}
+
+function saveAllReviews() {
+  let saved = 0;
+  // Pull in any notes the reviewer typed, keyed by company id
+  const notesById = {};
+  document.querySelectorAll('.review-notes-input').forEach(inp => {
+    notesById[inp.dataset.id] = inp.value.trim();
+  });
+  // Pull in any "also applies to" extra categories, keyed by company id
+  const extraCodesById = {};
+  document.querySelectorAll('.review-industry-multi').forEach(sel => {
+    extraCodesById[sel.dataset.id] = [...sel.selectedOptions].map(o => o.value);
+  });
+  document.querySelectorAll('.review-industry-sel').forEach(sel => {
+    if (!sel.value) return;
+    const id = sel.dataset.id;
+    const idx = DB.findIndex(d => String(d.id) === String(id));
+    if (idx === -1) return;
+    const suggestion = DB[idx].aiSuggestion;
+    DB[idx].industryCode = sel.value;
+    DB[idx].industryName = INDUSTRY_CODES[sel.value] || sel.value;
+    DB[idx].services = SERVICE_MAP[sel.value] || ['Solar EPC','Energy Audit'];
+    DB[idx].confidence = suggestion?.confidence || 90;
+    DB[idx].subIndustry = suggestion?.subIndustry || DB[idx].subIndustry;
+    // Multi-category: primary code plus anything picked in "also applies to"
+    const extras = (extraCodesById[id] || []).filter(code => code !== sel.value);
+    DB[idx].industryCodes = [sel.value, ...extras];
+    if (notesById[id]) {
+      DB[idx].mainProducts = notesById[id];
+      DB[idx].notes = notesById[id];
+    } else if (suggestion?.mainProducts) {
+      DB[idx].mainProducts = suggestion.mainProducts;
+    }
+    if (suggestion?.website && !DB[idx].website) DB[idx].website = suggestion.website;
+    DB[idx].status = 'Auto-Approved';
+    DB[idx].classificationBasis = suggestion?.dataSource || 'manual_review';
+    delete DB[idx].aiSuggestion;
+    saved++;
+  });
+  saveDB(); renderBulkReview(); renderDBTable(); updateBadge();
+  toast(`✅ ${saved} companies saved and approved`);
+}
+
+function bulkAssignIndustry() {
+  const industry = document.getElementById('bulk-assign-industry').value;
+  if (!industry) { toast('Select an industry first'); return; }
+  const checked = [...document.querySelectorAll('.bulk-row-check:checked')].map(cb => cb.dataset.id);
+  if (!checked.length) { toast('Select companies first'); return; }
+  checked.forEach(id => {
+    const sel = document.querySelector(`.review-industry-sel[data-id="${id}"]`);
+    if (sel) sel.value = industry;
+  });
+  toast(`Set ${checked.length} companies to ${INDUSTRY_CODES[industry]}`);
+}
+
+function toggleBulkSelectAll(cb) {
+  document.querySelectorAll('.bulk-row-check').forEach(c => c.checked = cb.checked);
+}
+
+function exportReviewList() {
+  const rows = DB.filter(c => c.status === 'Manual Review').map(c => ({
+    'Company Name': c.name, 'City': c.city, 'GIDC': c.gidc,
+    'Current Industry (all categories)': (c.industryCodes && c.industryCodes.length ? c.industryCodes : [c.industryCode]).filter(Boolean).join(', ') || '—',
+    'Searched Yet?': c.searched ? 'Yes' : 'No',
+    'Notes': c.notes||'', 'Website': c.website||'', 'Products': c.mainProducts||''
+  }));
+  const ws = XLSX.utils.json_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Review List');
+  XLSX.writeFile(wb, 'Revive_Review_List.xlsx');
+  toast('📥 Review list exported');
+}
+
+// ===================== INIT =====================
+updateBadge();
+renderDashboard();
+setGeminiKeyStatusUI();
+</script>
+</body>
+</html>
